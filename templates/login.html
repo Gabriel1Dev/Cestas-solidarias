@@ -1,0 +1,3 @@
+{% extends 'base.html' %}{% block content %}<div class="login-card"><div class="brand-mark mb-4">{% include 'basket-mark.html' %}</div><p class="eyebrow">CESTAS SOLIDÁRIAS</p><h1>Entrar no sistema</h1><p class="text-muted">Entre com sua conta para iniciar o atendimento.</p><form method="post">{% csrf_token %}{{ form.as_p }}<input type="hidden" name="next" value="{{ next }}"><button class="btn btn-primary w-100">Entrar</button></form></div>{% endblock %}
+
+

@@ -1,0 +1,77 @@
+Creating test database for alias 'default' ('test_cestas_test')...
+
+Found 33 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: messages, staticfiles
+  Apply all migrations: auth, contenttypes, core, sessions
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying contenttypes.0001_initial... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying auth.0001_initial... OK
+  Applying auth.0002_alter_permission_name_max_length... OK
+  Applying auth.0003_alter_user_email_max_length... OK
+  Applying auth.0004_alter_user_username_opts... OK
+  Applying auth.0005_alter_user_last_login_null... OK
+  Applying auth.0006_require_contenttypes_0002... OK
+  Applying auth.0007_alter_validators_add_error_messages... OK
+  Applying auth.0008_alter_user_username_max_length... OK
+  Applying auth.0009_alter_user_last_name_max_length... OK
+  Applying auth.0010_alter_group_name_max_length... OK
+  Applying auth.0011_update_proxy_permissions... OK
+  Applying auth.0012_alter_user_first_name_max_length... OK
+  Applying core.0001_initial... OK
+  Applying core.0002_protect_history... OK
+  Applying core.0003_backupconfirmation_loginattempt_runtimestate... OK
+test_anniversary_january31_and_leap_year (core.tests.DateTests.test_anniversary_january31_and_leap_year) ... ok
+test_calendar_first_partial_month_counts (core.tests.DateTests.test_calendar_first_partial_month_counts) ... ok
+test_calendar_year_boundary (core.tests.DateTests.test_calendar_year_boundary) ... ok
+test_address_coincidence_does_not_block (core.tests.RulesTests.test_address_coincidence_does_not_block) ... ok
+test_all_pages_render_and_export (core.tests.RulesTests.test_all_pages_render_and_export) ... ok
+test_change_responsible_does_not_restart (core.tests.RulesTests.test_change_responsible_does_not_restart) ... ok
+test_delivery_correction_is_annotation_and_cannot_reopen (core.tests.RulesTests.test_delivery_correction_is_annotation_and_cannot_reopen) ... ok
+test_expired_and_no_accumulation (core.tests.RulesTests.test_expired_and_no_accumulation) ... ok
+test_future_and_outside_period (core.tests.RulesTests.test_future_and_outside_period) ... ok
+test_historical_import_preserves_start (core.tests.RulesTests.test_historical_import_preserves_start) ... ok
+test_login_uses_password_hash_and_rejects_wrong_password (core.tests.RulesTests.test_login_uses_password_hash_and_rejects_wrong_password) ... ok
+test_no_renewal_or_extension_even_queryset (core.tests.RulesTests.test_no_renewal_or_extension_even_queryset) ... ok
+test_normalized_document_collision (core.tests.RulesTests.test_normalized_document_collision) ... ok
+test_one_delivery_duplicate_and_repeated_request (core.tests.RulesTests.test_one_delivery_duplicate_and_repeated_request) ... ok
+test_permissions_and_csrf (core.tests.RulesTests.test_permissions_and_csrf) ... ok
+test_person_correction_preserves_previous_values (core.tests.RulesTests.test_person_correction_preserves_previous_values) ... ok
+test_policy_change_only_affects_new_benefits (core.tests.RulesTests.test_policy_change_only_affects_new_benefits) ... ok
+test_previous_dependent_can_form_family_with_admin_review (core.tests.RulesTests.test_previous_dependent_can_form_family_with_admin_review) ... ok
+test_recipient_membership_and_delivery_immutable (core.tests.RulesTests.test_recipient_membership_and_delivery_immutable) ... ok
+test_recreating_original_responsible_blocked_after_replacement (core.tests.RulesTests.test_recreating_original_responsible_blocked_after_replacement) ... ok
+test_six_calendar_periods (core.tests.RulesTests.test_six_calendar_periods) ... ok
+test_setup_requires_secret_link_and_closes_after_first_account (core.tests_online.FirstSetupTests.test_setup_requires_secret_link_and_closes_after_first_account) ... ok
+test_wrong_token_cannot_create_admin (core.tests_online.FirstSetupTests.test_wrong_token_cannot_create_admin) ... ok
+test_backup_download_is_admin_only_and_does_not_claim_external_copy (core.tests_online.OnlineTests.test_backup_download_is_admin_only_and_does_not_claim_external_copy) ... ok
+test_backup_validation_rejects_extended_benefit_and_duplicate_delivery (core.tests_online.OnlineTests.test_backup_validation_rejects_extended_benefit_and_duplicate_delivery) ... ok
+test_consultation_and_withdrawals_are_separate (core.tests_online.OnlineTests.test_consultation_and_withdrawals_are_separate) ... ok
+test_external_copy_requires_explicit_confirmation (core.tests_online.OnlineTests.test_external_copy_requires_explicit_confirmation) ... ok
+test_html_date_values_are_iso_for_browser_date_fields (core.tests_online.OnlineTests.test_html_date_values_are_iso_for_browser_date_fields) ... ok
+test_login_attempts_are_throttled (core.tests_online.OnlineTests.test_login_attempts_are_throttled) ... ok
+test_maintenance_blocks_all_phones (core.tests_online.OnlineTests.test_maintenance_blocks_all_phones) ... ok
+test_pdf_export_filters_empty_and_removes_team_routes (core.tests_online.OnlineTests.test_pdf_export_filters_empty_and_removes_team_routes) ... ok
+test_shared_data_across_different_phone_sessions (core.tests_online.OnlineTests.test_shared_data_across_different_phone_sessions) ... ok
+test_unencrypted_remote_database_rejected (core.tests_online.OnlineTests.test_unencrypted_remote_database_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 33 tests in 44.197s
+
+OK
+Destroying test database for alias 'default' ('test_cestas_test')...
+
+  Applying sessions.0001_initial... OK
+System check identified no issues (0 silenced).
+PASS: duas conexões PostgreSQL disputam a entrega; apenas uma grava
+PASS: ensaio importa em outro banco, preserva histórico e mantém destino suspenso
+PASS: destino preenchido é rejeitado sem exclusão dos dados existentes
+PASS: restauração é restrita a administrador
+PASS: restauração exige comprovante do arquivo exato
+PASS: recuperação preserva banco original e cópia anterior; novo banco contém o histórico da cópia
+PASS: ambos os bancos permanecem suspensos até conferência e liberação explícitas
+7 verificações integradas concluídas em bancos PostgreSQL temporários.

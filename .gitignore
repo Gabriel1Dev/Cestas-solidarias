@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.pyc
+*.sqlite3*
+*.lock
+.env
+staticfiles/
+data/
+backups/
+.local-config.json
+
+.vercel/
+.env.*
+!.env.example
+backup-*.json
+comprovante-*.json

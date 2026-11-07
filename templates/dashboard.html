@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}Atendimento · Cestas Solidárias{% endblock %}
+{% block content %}
+<header class="desk-heading"><h1>Atendimento</h1><time datetime="{{ today|date:'Y-m-d' }}">{{ today|date:'d \d\e F \d\e Y' }}</time></header>
+<div class="desk-spread"><section class="service-desk" aria-labelledby="find-family">
+  <h2 id="find-family">Consultar uma família</h2>
+  <form action="{% url 'consultation' %}" method="get">
+    <label for="family-search">Nome, documento ou endereço</label>
+    <div class="desk-search"><input type="search" id="family-search" name="q"><button class="btn btn-primary">Buscar família</button></div>
+  </form>
+  <div class="desk-actions">
+    <a class="desk-action" href="{% url 'withdrawals' %}">Registrar retirada <span aria-hidden="true">→</span></a>
+    <a class="desk-action" href="{% url 'new_family' %}">Cadastrar família <span aria-hidden="true">→</span></a>
+  </div>
+</section>
+<section class="desk-summary" aria-labelledby="summary">
+  <h2 id="summary">Resumo do atendimento</h2>
+  <dl><div><dt>Famílias em atendimento</dt><dd>{{ active }}</dd></div><div><dt>Podem retirar agora</dt><dd>{{ pending }}</dd></div><div><dt>Entregas neste mês</dt><dd>{{ month_deliveries }}</dd></div><div><dt>Benefícios que terminam em até 30 dias</dt><dd>{{ ending }}</dd></div></dl>
+  <a href="{% url 'reports' %}">Abrir relatórios</a>
+</section>
+</div>{% if user.is_superuser and backup_overdue %}<p class="desk-notice">Backup pendente. <a href="{% url 'settings' %}">Conferir cópias de segurança</a></p>{% endif %}
+{% endblock %}
+
