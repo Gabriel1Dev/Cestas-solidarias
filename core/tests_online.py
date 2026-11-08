@@ -1,4 +1,5 @@
 import json,tempfile
+from unittest.mock import patch
 from pathlib import Path
 from datetime import date
 from django.test import TestCase,override_settings
@@ -6,17 +7,19 @@ from django.contrib.auth.models import User,Group
 from django.utils import timezone
 from django.db import connections
 from .models import Family,Delivery,RuntimeState,Audit,BackupConfirmation
-from .services import create_family,deliver
+from .services import create_family,deliver,decide_family
 from .backups import create_snapshot,validate_payload,load_empty_database,write_backup,read_backup,record_confirmation,backup_due,stage_recovery,sha256
 from .test_support import temporary_database
 class OnlineTests(TestCase):
     def setUp(self):
         self.admin=User.objects.create_superuser('admin',password='Ficticio-para-testes-987!')
-        self.f=create_family(self.admin,name='Família online fictícia',birth=date(1980,1,1),kind='CPF',number='112233',address='Rua Exemplo',start=timezone.localdate())
+        self.clock=patch('django.utils.timezone.localdate',return_value=date(2025,11,8));self.clock.start();self.addCleanup(self.clock.stop)
+        self.f=create_family(self.admin,has_children="yes",months=3,name='Família online fictícia',birth=date(1980,1,1),kind='CPF',number='10000000795',identity_kind='RG',identity_number='RG10000000795',address='Rua Exemplo',start=timezone.localdate(),residents_count=2,children_school_frequency='Frequência informada',screening_reason='other',screening_notes='Informações essenciais',personal_documents_seen=True,address_proof_seen=True)
+        decide_family(self.admin,self.f,approved=True,reason='Documentos conferidos e critérios atendidos')
     def test_shared_data_across_different_phone_sessions(self):
         from django.test import Client
         a=Client();b=Client();a.force_login(self.admin);b.force_login(self.admin)
-        response=a.post(f'/familias/{self.f.pk}/entrega/',{'recipient':self.f.responsible_id,'note':''})
+        response=a.post(f'/familias/{self.f.pk}/entrega/',{'recipient':self.f.responsible_id,'period':self.f.benefit.periods.first().pk,'day':'2025-11-08','note':''})
         self.assertEqual(response.status_code,302)
         self.assertContains(b.get(f'/familias/{self.f.pk}/'),'já registrada')
         self.assertEqual(Delivery.objects.count(),1)
@@ -32,7 +35,7 @@ class OnlineTests(TestCase):
         self.assertEqual(self.client.get('/retiradas/').status_code,302)
         self.client.force_login(self.admin)
         home=self.client.get('/')
-        for link in ['/consulta/','/familias/nova/','/retiradas/','/relatorios/']:
+        for link in ['/consulta/','/familias/nova/','/agenda/','/relatorios/','/triagem/']:
             self.assertContains(home,'href="'+link+'"')
         result=self.client.get('/consulta/?q=online')
         self.assertContains(result,'Família online fictícia')
@@ -40,11 +43,11 @@ class OnlineTests(TestCase):
         self.assertNotContains(result,'Atender família')
         self.assertNotContains(self.client.get('/consulta/?q=INEXISTENTE'),'Família online fictícia')
         detail=self.client.get(f'/consulta/{self.f.pk}/')
-        self.assertContains(detail,'Seis períodos de atendimento')
+        self.assertContains(detail,'Agenda e histórico das cestas')
         self.assertContains(detail,'Voltar à consulta')
         for action in ['Confirmar entrega','Editar cadastro','Incluir</a>','Corrigir dados /','Registrar retirada do papel','Anotar correção']:
             self.assertNotContains(detail,action)
-        self.assertContains(self.client.get('/retiradas/'),'Registrar retirada')
+        self.assertContains(self.client.get('/agenda/'),'Agenda de entregas')
         self.assertContains(self.client.get(f'/familias/{self.f.pk}/'),'Confirmar entrega')
         deliver(self.admin,self.f,self.f.responsible)
         self.assertNotContains(self.client.get('/retiradas/'),'Família online fictícia')

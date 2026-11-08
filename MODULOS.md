@@ -1,12 +1,14 @@
-## Organização por função — 06/11/2026
+# Organização por função
 
-- Visão geral: resumo e atalhos para as quatro tarefas principais.
-- Consultar famílias: busca por nome/documento/endereço e situação, com cadastro e histórico sem botões de alteração ou entrega.
-- Cadastrar família: acesso direto ao formulário existente.
-- Retiradas: inicia com famílias que podem retirar; abre diretamente a confirmação de entrega. O nome da família abre os dados do atendimento para manutenção cadastral.
-- Relatórios: exportação em PDF com filtros.
+- **Início:** resumo dos atendimentos, ações frequentes e pendências de triagem.
+- **Agenda de entregas:** períodos próximos, em especial a data do segundo sábado.
+- **Consultar pessoas:** busca por nome, documento ou endereço, situação e histórico sem ações de alteração ou entrega.
+- **Novo atendimento:** formulário de solicitação e dados essenciais da família; inicia pendente de triagem.
+- **Retiradas:** encontra atendimentos aptos e registra uma entrega autorizada.
+- **Relatórios:** filtro e exportação de PDF.
+- **Triagens:** análise e decisão da coordenação.
+- **Configurações e backup / Auditoria:** áreas técnicas restritas à coordenação.
 
-As listas de consulta e retiradas usam cartões no celular. Links antigos de listagem /familias/ redirecionam à consulta, preservando filtros. Não há migração ou mudança nos cadastros, nas regras de benefício, nos usuários ou nas permissões existentes.
+As listas usam cartões no celular. A área de gestão de equipes foi removida da navegação. Contas individuais e autoria permanecem necessárias. O escopo do aplicativo é atendimento e entregas; estoque e doações estão fora.
 
-Validação: 33 testes automatizados e sete verificações integradas PostgreSQL aprovados. Em dados fictícios online, conferidos busca, histórico sem ações de alteração e acesso ao formulário de entrega. Consulta, retiradas e início verificados em 320, 390, 768 e 1440 pixels, sem transbordamento da página. A avaliação é técnica; não substitui observação de uso com voluntários.
-
+Validação local de 08/11/2026: 50 testes Django, 7 verificações PostgreSQL e fluxos web em celular, tablet e desktop passaram. Veja `VALIDACAO.md` e `AUDITORIA-USABILIDADE.md`. A interface ainda requer aceitação dos voluntários em Android físico.

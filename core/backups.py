@@ -10,10 +10,10 @@ from django.utils import timezone
 from django.contrib.auth.models import User,Group
 from . import models
 from .locking import maintenance_lock
-from .periods import periods
+from .periods import periods,distribution_periods
 from .services import admin,audit
-FORMAT='cestas-online-v2'
-MODEL_ORDER=[Group,User,models.Person,models.Document,models.Family,models.Membership,models.Benefit,models.Period,models.Delivery,models.Audit,models.Configuration,models.BackupRun,models.BackupConfirmation,models.RuntimeState]
+FORMAT='cestas-online-v3'
+MODEL_ORDER=[Group,User,models.Person,models.Document,models.Family,models.Membership,models.Benefit,models.ExtensionAuthorization,models.Period,models.ScheduleAuthorization,models.Delivery,models.Audit,models.Configuration,models.BackupRun,models.BackupConfirmation,models.RuntimeState]
 def schema(using='default'):
     return [list(r) for r in MigrationRecorder.Migration.objects.using(using).order_by('app','name').values_list('app','name')]
 def sha256(data):return hashlib.sha256(data).hexdigest()
@@ -32,28 +32,54 @@ def create_snapshot():
         return json.dumps(payload,ensure_ascii=False,separators=(',',':')).encode('utf-8')
 def validate_payload(payload,using='default'):
     if not hmac.compare_digest(str(payload.get('signature','')),signature(payload)):raise ValueError('Assinatura inválida. O arquivo foi alterado ou a chave de backup não corresponde à origem.')
-    if payload.get('format')!=FORMAT or payload.get('schema')!=schema(using):raise ValueError('Formato ou migrações incompatíveis com esta versão.')
+    current_schema = schema(using)
+    legacy_schema = [item for item in current_schema if item[1] not in {'0004_duration','0005_client_workflow','0006_extension_period_limit','0007_client_workflow_guards','0008_screening_reasons','0009_exception_document_flag','0010_delivery_actual_date','0011_triage_schedule_and_delivery_guards'}]
+    old_duration_schema = [item for item in current_schema if item[1] not in {'0005_client_workflow','0006_extension_period_limit','0007_client_workflow_guards','0008_screening_reasons','0009_exception_document_flag','0010_delivery_actual_date','0011_triage_schedule_and_delivery_guards'}]
+    previous_schema = [item for item in current_schema if item[1] not in {'0010_delivery_actual_date','0011_triage_schedule_and_delivery_guards'}]
+    if payload.get('format') not in (FORMAT,'cestas-online-v2') or payload.get('schema') not in (current_schema, previous_schema, legacy_schema, old_duration_schema):
+        raise ValueError('Formato ou migrações incompatíveis com esta versão.')
     allowed={m._meta.label_lower for m in MODEL_ORDER}
     rows={label:{} for label in allowed}
     for obj in payload.get('objects',[]):
         label=obj.get('model')
         if label not in allowed or obj.get('pk') in rows[label]:raise ValueError('Modelo desconhecido ou identificador repetido no backup.')
         rows[label][obj['pk']]=obj['fields']
+    extension_rows=rows['core.extensionauthorization']
     for bid,b in rows['core.benefit'].items():
-        expected=periods(date.fromisoformat(b['original_start']),b['mode'])
-        actual=sorted((p['number'],p['start'],p['end']) for p in rows['core.period'].values() if p['benefit']==bid)
-        if actual!=[(i,str(a),str(z)) for i,(a,z) in enumerate(expected,1)]:raise ValueError('Benefício sem seis períodos originais válidos.')
         policy=b['policy']
-        if policy.get('months')!=6 or policy.get('renewable') is not False or policy.get('missed_accumulate') is not False or policy.get('mode')!=b['mode']:raise ValueError('Política de benefício inválida.')
+        months=policy.get('months')
+        if months not in (1,2,3,6): raise ValueError('Duração inválida.')
+        if policy.get('renewable') is not False or policy.get('missed_accumulate') is not False:raise ValueError('Política de benefício inválida.')
+        all_periods=[(pk,p) for pk,p in rows['core.period'].items() if p['benefit']==bid]
+        base=sorted((p['number'],p['start'],p['end']) for _,p in all_periods if not p.get('extension'))
+        if policy.get('version')==3:
+            expected=distribution_periods(date.fromisoformat(b['original_start']),months)
+            if b['mode']!='distribution' or policy.get('mode')!='distribution':raise ValueError('Política de distribuição inválida.')
+        else:
+            expected=periods(date.fromisoformat(b['original_start']),b['mode'],months)
+        if base!=[(i,str(a),str(z)) for i,(a,z) in enumerate(expected,1)]:raise ValueError('Benefício sem períodos originais válidos.')
         if policy.get('periods')!=[{'start':str(a),'end':str(z)} for a,z in expected]:raise ValueError('Política e períodos divergentes.')
+        last_number=max(row[0] for row in base);last_end=max(date.fromisoformat(row[2]) for row in base)
+        auths=sorted(((aid,a) for aid,a in extension_rows.items() if a['benefit']==bid),key=lambda pair:pair[1]['authorized_at'])
+        for auth_id,auth in auths:
+            if auth['months'] not in range(1,7) or len(auth['reason'].strip())<10:raise ValueError('Autorização de prorrogação inválida.')
+            extension_periods=sorted((p['number'],p['start'],p['end']) for _,p in all_periods if p.get('extension')==auth_id)
+            expected_extension=distribution_periods(date.fromisoformat(auth['authorized_at'][:10]),auth['months'])
+            if extension_periods!=[(last_number+i,str(a),str(z)) for i,(a,z) in enumerate(expected_extension,1)]:raise ValueError('Prorrogação sem períodos autorizados válidos.')
+            last_number+=auth['months'];last_end=expected_extension[-1][1]
         if b['family'] not in rows['core.family']:raise ValueError('Benefício sem família.')
+    for auth_id,auth in rows['core.scheduleauthorization'].items():
+        if auth['period'] not in rows['core.period'] or len(auth['reason'].strip())<10:raise ValueError('Autorização de reagendamento inválida.')
     occupied=set()
     for d in rows['core.delivery'].values():
         if d['period'] not in rows['core.period'] or d['period'] in occupied:raise ValueError('Entrega duplicada ou sem período.')
         occupied.add(d['period']);p=rows['core.period'][d['period']]
-        if not p['start']<=d['delivered_on']<p['end']:raise ValueError('Entrega fora do período.')
-        family=rows['core.benefit'][p['benefit']]['family']
-        if not any(m['person']==d['recipient'] and m['family']==family and not m['ended_at'] for m in rows['core.membership'].values()):raise ValueError('Pessoa sem vínculo na entrega.')
+        b=rows['core.benefit'][p['benefit']]
+        if d['delivered_on'] < b['original_start']:raise ValueError('Entrega anterior ao início do atendimento.')
+        family=rows['core.family'][b['family']]
+        if family.get('status','approved')!='approved':raise ValueError('Entrega vinculada a triagem não aprovada.')
+        family_id=b['family']
+        if not any(m['person']==d['recipient'] and m['family']==family_id and not m['ended_at'] for m in rows['core.membership'].values()):raise ValueError('Pessoa sem vínculo na entrega.')
     return {label:len(items) for label,items in rows.items()}
 def read_backup(path,using='default'):
     raw=Path(path).read_bytes()
@@ -78,7 +104,17 @@ def load_empty_database(payload,using):
     if models.Family.objects.using(using).exists() or models.Audit.objects.using(using).exists() or User.objects.using(using).exists():raise ValueError('O destino deve ser um banco novo, sem usuários, famílias ou histórico.')
     validate_payload(payload,using)
     with transaction.atomic(using=using):
-        for obj in serializers.deserialize('json',json.dumps(payload['objects']),using=using,handle_forward_references=True):
+        # Older signed backups did not require a reschedule time. Preserve the
+        # period's configured time, falling back to the standard distribution time.
+        restore_objects=json.loads(json.dumps(payload['objects']))
+        periods_by_id={str(obj['pk']):obj['fields'] for obj in restore_objects if obj.get('model')=='core.period'}
+        config=next((obj['fields'] for obj in restore_objects if obj.get('model')=='core.configuration'),{})
+        fallback=config.get('distribution_time') or '09:00:00'
+        for obj in restore_objects:
+            if obj.get('model')=='core.scheduleauthorization' and not obj['fields'].get('time'):
+                period=periods_by_id.get(str(obj['fields'].get('period')),{})
+                obj['fields']['time']=period.get('scheduled_time') or fallback
+        for obj in serializers.deserialize('json',json.dumps(restore_objects),using=using,handle_forward_references=True):
             obj.save(using=using)
         models.RuntimeState.objects.using(using).update_or_create(pk=1,defaults={'writes_paused':True})
         connections[using].check_constraints()

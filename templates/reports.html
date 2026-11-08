@@ -1,1 +1,39 @@
-{% extends 'base.html' %}{% block content %}<div class="page-heading"><div><p class="eyebrow">ACOMPANHAMENTO</p><h1>Relatórios</h1><p>Escolha as famílias e baixe um PDF organizado, pronto para consultar ou imprimir.</p></div></div><section class="panel padded"><h2>Relatório de famílias</h2><p>Inclui resumo do atendimento, responsável, contato, endereço, datas e situação de cada família.</p><form method="get" action="{% url 'export' %}"><p><label for="report-q">Nome, documento ou endereço (opcional)</label><br><input id="report-q" name="q" value="{{ q }}" placeholder="Deixe em branco para incluir todas" style="width:100%"></p><p><label for="report-status">Famílias que deseja incluir</label><br><select id="report-status" name="status"><option value="">Todas as situações</option><option value="disponivel">Podem retirar agora</option><option value="retirado">Já retiraram neste período</option><option value="encerrado">Benefício encerrado</option></select></p><button class="btn btn-primary">Baixar relatório em PDF ↓</button></form><p class="helptext mt-3">O PDF contém dados pessoais. O download exige sua conta e fica registrado no histórico de auditoria.</p></section>{% endblock %}
+{% extends 'base.html' %}
+{% block content %}
+<header class="page-heading"><div><h1>Relatórios</h1><p>Escolha quais famílias incluir e baixe o relatório em PDF.</p></div></header>
+
+<div class="report-export-layout">
+<section class="report-export"><h2>Relatório de famílias</h2><p>Reúna as informações das famílias para consultar ou imprimir.</p>
+<form method="get" action="{% url 'export' %}">
+<div class="report-export-controls"><div class="report-search-control"><label for="report-q">Buscar uma família (opcional)</label>
+<input id="report-q" name="q" value="{{ q }}" placeholder="Nome, documento ou endereço"></div>
+<div class="report-status-control"><span id="report-status-label">Situação das famílias</span><details class="report-status-picker"><summary aria-labelledby="report-status-label report-status-current"><strong id="report-status-current">Todas as famílias</strong><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+<fieldset class="report-status-menu"><legend class="visually-hidden">Situação das famílias</legend>
+<label class="report-status-option"><input type="radio" name="status" value="" checked><span>Todas as famílias</span><svg class="report-option-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></label>
+<label class="report-status-option"><input type="radio" name="status" value="disponivel"><span>Entrega hoje</span><svg class="report-option-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></label>
+<label class="report-status-option"><input type="radio" name="status" value="retirado"><span>Entrega registrada hoje</span><svg class="report-option-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></label>
+<label class="report-status-option"><input type="radio" name="status" value="agendado"><span>Entrega futura agendada</span></label>
+<label class="report-status-option"><input type="radio" name="status" value="triagem"><span>Aguardando triagem</span></label>
+<label class="report-status-option"><input type="radio" name="status" value="nao_aprovado"><span>Não aprovado</span></label>
+<label class="report-status-option"><input type="radio" name="status" value="encerrado"><span>Encerradas</span><svg class="report-option-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></label>
+</fieldset></details></div></div>
+<button type="submit" class="btn btn-primary report-download">Baixar relatório em PDF</button>
+<p class="report-audit-note">O download é registrado na auditoria da sua conta.</p></form></section>
+<aside class="report-guidance" aria-labelledby="report-guidance-title">
+<h2 id="report-guidance-title">Antes de baixar</h2>
+<p>O relatório inclui dados da pessoa responsável, contato, endereço, datas e situação de cada família.</p>
+<div class="report-guidance-note"><strong>Cuide dessas informações</strong><p>O PDF contém dados pessoais. Compartilhe somente com pessoas autorizadas.</p></div>
+<p class="report-format">Arquivo em PDF, pronto para consulta ou impressão.</p>
+</aside></div>
+<script>
+(function(){
+const picker=document.querySelector('.report-status-picker');
+const current=document.getElementById('report-status-current');
+picker.querySelectorAll('input[name="status"]').forEach(input=>input.addEventListener('change',function(){
+current.textContent=this.closest('label').querySelector('span').textContent;
+picker.open=false;picker.querySelector('summary').focus();
+}));
+document.addEventListener('click',event=>{if(!picker.contains(event.target))picker.open=false;});
+picker.addEventListener('keydown',event=>{if(event.key==='Escape'){picker.open=false;picker.querySelector('summary').focus();}});
+})();
+</script>{% endblock %}

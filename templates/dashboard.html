@@ -1,23 +1,50 @@
 {% extends 'base.html' %}
-{% block title %}Atendimento · Cestas Solidárias{% endblock %}
+{% block body_class %}overview-page{% endblock %}
+{% block title %}Atender · Cestas Solidárias{% endblock %}
 {% block content %}
-<header class="desk-heading"><h1>Atendimento</h1><time datetime="{{ today|date:'Y-m-d' }}">{{ today|date:'d \d\e F \d\e Y' }}</time></header>
-<div class="desk-spread"><section class="service-desk" aria-labelledby="find-family">
-  <h2 id="find-family">Consultar uma família</h2>
-  <form action="{% url 'consultation' %}" method="get">
-    <label for="family-search">Nome, documento ou endereço</label>
-    <div class="desk-search"><input type="search" id="family-search" name="q"><button class="btn btn-primary">Buscar família</button></div>
-  </form>
-  <div class="desk-actions">
-    <a class="desk-action" href="{% url 'withdrawals' %}">Registrar retirada <span aria-hidden="true">→</span></a>
-    <a class="desk-action" href="{% url 'new_family' %}">Cadastrar família <span aria-hidden="true">→</span></a>
-  </div>
+<header class="desk-heading"><h1>Atender</h1></header>
+<section class="counter-search" aria-label="Busca de famílias">
+<form action="{% url 'withdrawals' %}" method="get">
+<input type="hidden" name="status" value="">
+<div class="intake-modes intake-segmented" role="group" aria-label="Modo de busca">
+<span class="intake-slider" aria-hidden="true"></span>
+<button type="button" class="intake-chip" data-mode="text" aria-pressed="true" aria-controls="family-search"><span>Nome ou Endereço</span></button>
+<button type="button" class="intake-chip" data-mode="numeric" aria-pressed="false" aria-controls="family-search"><span>CPF</span></button>
+</div>
+<label for="family-search" id="search-label">Nome da pessoa ou endereço</label>
+<div class="intake-capsule"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><input type="search" id="family-search" name="q" value="{{ q }}" autocomplete="off" inputmode="text" placeholder="Ex: Maria da Silva ou Rua das Flores, 120"><button class="btn btn-primary" type="submit">Buscar</button></div>
+</form></section>
+{% if rows %}
+<section class="counter-results" aria-labelledby="results-title"><h2 id="results-title">Famílias que podem retirar</h2>
+<p>{% if pending > 8 %}Mostrando as primeiras {{ rows|length }} de {{ pending }} famílias que podem retirar hoje. <a href="{% url 'withdrawals' %}">Ver todas</a>{% else %}{{ rows|length }} família{{ rows|length|pluralize:"s" }} pode{{ rows|length|pluralize:"m" }} retirar hoje.{% endif %}</p>
+<div class="module-results">{% include 'rows.html' with withdrawals=True %}</div>
 </section>
-<section class="desk-summary" aria-labelledby="summary">
-  <h2 id="summary">Resumo do atendimento</h2>
-  <dl><div><dt>Famílias em atendimento</dt><dd>{{ active }}</dd></div><div><dt>Podem retirar agora</dt><dd>{{ pending }}</dd></div><div><dt>Entregas neste mês</dt><dd>{{ month_deliveries }}</dd></div><div><dt>Benefícios que terminam em até 30 dias</dt><dd>{{ ending }}</dd></div></dl>
-  <a href="{% url 'reports' %}">Abrir relatórios</a>
-</section>
-</div>{% if user.is_superuser and backup_overdue %}<p class="desk-notice">Backup pendente. <a href="{% url 'settings' %}">Conferir cópias de segurança</a></p>{% endif %}
+{% else %}<p class="counter-empty" role="status">Nenhuma família com entrega autorizada para hoje. Consulte a agenda para ver as próximas datas.</p>{% endif %}
+<section class="counter-summary" aria-label="Resumo do atendimento">
+<dl>
+<div class="summary-available"><dt>Podem retirar hoje</dt><dd>{{ pending }}</dd></div>
+<div class="summary-delivered"><dt>Cestas entregues no mês</dt><dd>{{ month_deliveries }}</dd></div>
+<div class="summary-ending"><dt><span>Término em 30 dias</span></dt><dd>{{ ending }}</dd></div>
+{% if user.is_superuser %}<div class="summary-triage"><dt><a href="{% url 'triage' %}">Triagens pendentes</a></dt><dd>{{ triage_count }}</dd></div>{% endif %}
+</dl></section><p class="schedule-shortcut"><a href="{% url 'agenda' %}">Consultar agenda de entregas →</a></p>
+{% if user.is_superuser and backup_overdue %}<div class="backup-status"><p class="backup-capsule"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z"/><path d="M12 8v5m0 3h.01"/></svg><span><strong>Backup pendente</strong><a href="{% url 'settings' %}">Verificar cópias de segurança</a></span></p></div>{% endif %}
+<script>
+(function(){
+  const search = document.getElementById('family-search');
+  const chips = Array.from(document.querySelectorAll('.intake-chip'));
+  function setMode(value, focus){
+    const numeric = value === 'numeric';
+    search.inputMode = numeric ? 'numeric' : 'text';
+    search.placeholder = numeric ? 'Ex: 123.456.789-00 ou apenas os números' : 'Ex: Maria da Silva ou Rua das Flores, 120';
+    document.getElementById('search-label').textContent = numeric ? 'Números do CPF' : 'Nome da pessoa ou endereço';
+    chips.forEach(c => c.setAttribute('aria-pressed', String(c.dataset.mode === value)));
+    const slider = document.querySelector('.intake-slider');
+    if(slider) slider.style.transform = numeric ? 'translateX(100%)' : 'translateX(0)';
+    if(focus){ search.blur(); search.focus(); }
+  }
+  setMode(search.value && /^[\d.\-\s]+$/.test(search.value) ? 'numeric' : 'text', false);
+  chips.forEach(c => c.addEventListener('click', () => setMode(c.dataset.mode, true)));
+  if(window.matchMedia('(min-width: 650px)').matches && !search.value) search.focus();
+})();
+</script>
 {% endblock %}
-

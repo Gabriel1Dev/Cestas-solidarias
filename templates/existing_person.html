@@ -1,0 +1,7 @@
+{% extends 'base.html' %}{% block content %}
+<dialog id="existing-dialog" open aria-labelledby="existing-title" class="panel padded" style="max-width:min(90vw,600px)">
+<h1 id="existing-title">Esta pessoa já foi atendida</h1>
+<p>O CPF informado pertence a <strong>{{ family.responsible.name }}</strong>. O histórico está salvo no cadastro existente.</p>
+{% if can_restart %}<p>Deseja iniciar mais um período de atendimento para esta pessoa?</p><a class="btn btn-primary" href="{% url 'extension' family.pk %}">Sim, iniciar novo atendimento</a>{% else %}<p>Confira a situação do atendimento antes de iniciar outro. Não são permitidos atendimentos simultâneos.</p>{% endif %}
+<a class="btn btn-outline-secondary" href="{% url 'family' family.pk %}">Ver atendimento anterior</a> <a class="btn btn-outline-secondary" href="{% url 'new_family' %}">Voltar ao cadastro</a>
+</dialog><script>(function(){const modal=document.getElementById('existing-dialog');if(modal.showModal){modal.removeAttribute('open');modal.showModal();modal.addEventListener('cancel',function(event){event.preventDefault();location.href="{% url 'new_family' %}";});}})();</script>{% endblock %}

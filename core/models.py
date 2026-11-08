@@ -12,10 +12,21 @@ class Document(models.Model):
     kind=models.CharField(max_length=30)
     number=models.CharField(max_length=80,unique=True)
 class Family(models.Model):
+    STATUS=[('pending','Aguardando triagem'),('approved','Atendimento aprovado'),('denied','Não aprovado')]
     identity=models.UUIDField(default=uuid.uuid4,unique=True,editable=False)
     responsible=models.ForeignKey(Person,on_delete=models.PROTECT,related_name='represented_families')
     phone=models.CharField(max_length=40,blank=True)
     address=models.CharField(max_length=240)
+    status=models.CharField(max_length=12,choices=STATUS,default='approved')
+    decision_reason=models.CharField(max_length=500,blank=True)
+    decided_by=models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.PROTECT,null=True,blank=True,related_name='family_decisions')
+    decided_at=models.DateTimeField(null=True,blank=True)
+    residents_count=models.PositiveSmallIntegerField(default=1)
+    children_school_frequency=models.CharField(max_length=300,blank=True)
+    screening_reason=models.CharField(max_length=30,blank=True,choices=[('unemployment','Desemprego'),('health','Problema de saúde'),('accident','Acidente/emergência'),('other','Outra vulnerabilidade')])
+    screening_notes=models.TextField(blank=True)
+    personal_documents_seen=models.BooleanField(default=False)
+    address_proof_seen=models.BooleanField(default=False)
     created_at=models.DateTimeField(auto_now_add=True)
     def __str__(self): return f'F{self.pk:05d} · {self.responsible.name}'
 class Membership(models.Model):
@@ -29,7 +40,7 @@ class Membership(models.Model):
 class Benefit(models.Model):
     family=models.OneToOneField(Family,on_delete=models.PROTECT,related_name='benefit')
     original_start=models.DateField()
-    mode=models.CharField(max_length=12,choices=[('calendar','Mês do calendário'),('anniversary','A partir da data de início')])
+    mode=models.CharField(max_length=12,choices=[('calendar','Mês do calendário'),('anniversary','A partir da data de início'),('distribution','Segundo sábado')])
     policy=models.JSONField()
     created_by=models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.PROTECT)
     created_at=models.DateTimeField(auto_now_add=True)
@@ -38,9 +49,12 @@ class Period(models.Model):
     number=models.PositiveSmallIntegerField()
     start=models.DateField()
     end=models.DateField(help_text='Limite exclusivo')
+    scheduled_on=models.DateField(null=True,blank=True)
+    scheduled_time=models.TimeField(null=True,blank=True)
+    extension=models.ForeignKey('ExtensionAuthorization',on_delete=models.PROTECT,null=True,blank=True,related_name='periods')
     class Meta:
         ordering=['number']
-        constraints=[models.UniqueConstraint(fields=['benefit','number'],name='one_period_number'),models.CheckConstraint(condition=Q(number__gte=1,number__lte=6),name='six_periods_only'),models.CheckConstraint(condition=Q(end__gt=models.F('start')),name='positive_period')]
+        constraints=[models.UniqueConstraint(fields=['benefit','number'],name='one_period_number'),models.CheckConstraint(condition=Q(number__gte=1,number__lte=32767),name='six_periods_only'),models.CheckConstraint(condition=Q(end__gt=models.F('start')),name='positive_period')]
 class Delivery(models.Model):
     period=models.OneToOneField(Period,on_delete=models.PROTECT,related_name='delivery')
     recipient=models.ForeignKey(Person,on_delete=models.PROTECT)
@@ -49,6 +63,22 @@ class Delivery(models.Model):
     recorded_by=models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.PROTECT)
     historical=models.BooleanField(default=False)
     note=models.CharField(max_length=300,blank=True)
+
+class ScheduleAuthorization(models.Model):
+    period=models.OneToOneField(Period,on_delete=models.PROTECT,related_name='schedule_authorization')
+    date=models.DateField()
+    time=models.TimeField()
+    reason=models.CharField(max_length=500)
+    supporting_document_seen=models.BooleanField(default=False)
+    authorized_by=models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.PROTECT)
+    authorized_at=models.DateTimeField(auto_now_add=True)
+
+class ExtensionAuthorization(models.Model):
+    benefit=models.ForeignKey(Benefit,on_delete=models.PROTECT,related_name='extensions')
+    months=models.PositiveSmallIntegerField()
+    reason=models.CharField(max_length=500)
+    authorized_by=models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.PROTECT)
+    authorized_at=models.DateTimeField(auto_now_add=True)
 class Audit(models.Model):
     at=models.DateTimeField(auto_now_add=True)
     actor=models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.PROTECT)
@@ -64,7 +94,8 @@ class Configuration(models.Model):
     document_types=models.CharField('Tipos de documento (separados por vírgula)',max_length=200,default='CPF,RG,Outro')
     dependent_documents=models.BooleanField('Exigir documentos dos dependentes',default=False)
     phone_required=models.BooleanField('Exigir telefone',default=False)
-    period_mode=models.CharField('Contagem dos novos benefícios',max_length=12,choices=Benefit._meta.get_field('mode').choices,default='calendar')
+    distribution_time=models.TimeField('Horário padrão de distribuição',default='09:00')
+    period_mode=models.CharField('Contagem dos benefícios antigos',max_length=12,choices=[('calendar','Mês do calendário'),('anniversary','A partir da data de início')],default='calendar')
     backup_destination=models.CharField('Diretório de backup principal',max_length=400,blank=True)
     independent_destination=models.CharField('Diretório em dispositivo independente',max_length=400,blank=True)
     backup_interval_hours=models.PositiveIntegerField('Intervalo desejado (horas)',default=24)

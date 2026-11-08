@@ -1,5 +1,9 @@
 # Estado para continuar a implantação
 
+## Revisão local em 07/11/2026 — atenção
+
+As mudanças de triagem, duração, agenda do segundo sábado, exceções, backup e responsividade descritas no código não foram publicadas nesta rodada. As informações de deployment abaixo registram a infraestrutura e uma revisão anterior; **não indicam que esta revisão local esteja em produção**. Não aponte usuários para o serviço hospedado contando com as novas regras. Antes de promover esta revisão, compare a base e os ambientes, gere e valide backup independente, ensaie todas as migrações num banco separado e preserve o banco original. A publicação continua sujeita a autorização explícita do responsável.
+
 Data: 06/11/2026. O projeto online está separado da entrega local. Nenhuma senha ou conexão privada é guardada neste arquivo.
 
 ## Neon

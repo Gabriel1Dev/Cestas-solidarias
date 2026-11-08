@@ -1,3 +1,45 @@
-{% extends 'base.html' %}{% block content %}<div class="login-card"><div class="brand-mark mb-4">{% include 'basket-mark.html' %}</div><p class="eyebrow">CESTAS SOLIDÁRIAS</p><h1>Entrar no sistema</h1><p class="text-muted">Entre com sua conta para iniciar o atendimento.</p><form method="post">{% csrf_token %}{{ form.as_p }}<input type="hidden" name="next" value="{{ next }}"><button class="btn btn-primary w-100">Entrar</button></form></div>{% endblock %}
-
-
+{% extends 'base.html' %}
+{% block title %}Entrar · Cestas Solidárias{% endblock %}
+{% block body_class %}login-page{% endblock %}
+{% block content %}
+<div class="login-layout">
+  <section class="login-welcome" aria-label="Cestas Solidárias">
+    <div class="login-identity"><span class="login-emblem">{% include 'basket-mark.html' %}</span><span class="login-brand-name">Cestas <strong>Solidárias</strong></span></div>
+    <div class="login-welcome-copy"><p class="login-welcome-title">Cada atendimento<br>começa com cuidado.</p><p>Um espaço para organizar o atendimento às famílias.</p></div>
+  </section>
+  <section class="login-card" aria-labelledby="login-title">
+    <h1 id="login-title">Bem-vindo(a)</h1>
+    <p class="login-intro">Entre com seu usuário e senha para iniciar o atendimento.</p>
+    <form method="post">
+      {% csrf_token %}
+      {% if form.non_field_errors %}<div class="login-errors" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+      {% for field in form.visible_fields %}
+      <div class="login-field">
+        {{ field.label_tag }}
+        <div class="login-input-wrap">{{ field }}{% if field.name == 'password' %}<button type="button" class="login-password-toggle" aria-controls="{{ field.id_for_label }}" aria-pressed="false" hidden>Mostrar</button>{% endif %}</div>
+        {% if field.errors %}<div class="login-errors" role="alert">{{ field.errors }}</div>{% endif %}
+        {% if field.help_text %}<small class="login-help">{{ field.help_text }}</small>{% endif %}
+      </div>
+      {% endfor %}
+      {% for field in form.hidden_fields %}{{ field }}{% endfor %}
+      <input type="hidden" name="next" value="{{ next }}">
+      <button class="btn btn-primary w-100" type="submit">Entrar</button>
+    </form>
+  </section>
+</div>
+<script>
+(function(){
+  const toggle=document.querySelector('.login-password-toggle');
+  if(!toggle)return;
+  const password=document.getElementById(toggle.getAttribute('aria-controls'));
+  if(!password)return;
+  toggle.hidden=false;
+  toggle.addEventListener('click',function(){
+    const visible=password.type==='password';
+    password.type=visible?'text':'password';
+    toggle.textContent=visible?'Ocultar':'Mostrar';
+    toggle.setAttribute('aria-pressed',String(visible));
+  });
+})();
+</script>
+{% endblock %}
