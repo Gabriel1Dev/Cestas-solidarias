@@ -3,13 +3,11 @@
 {% block body_class %}login-page{% endblock %}
 {% block content %}
 <div class="login-layout">
-  <section class="login-welcome" aria-label="Cestas Solidárias">
-    <div class="login-identity"><span class="login-emblem">{% include 'basket-mark.html' %}</span><span class="login-brand-name">Cestas <strong>Solidárias</strong></span></div>
-    <div class="login-welcome-copy"><p class="login-welcome-title">Cada atendimento<br>começa com cuidado.</p><p>Um espaço para organizar o atendimento às famílias.</p></div>
-  </section>
   <section class="login-card" aria-labelledby="login-title">
+    <div class="login-emblem" aria-hidden="true">{% include 'basket-mark.html' %}</div>
+    <p class="login-brand-name">Cestas Solidárias</p>
     <h1 id="login-title">Bem-vindo(a)</h1>
-    <p class="login-intro">Entre com seu usuário e senha para iniciar o atendimento.</p>
+    <p class="login-intro">Entre para continuar o atendimento às famílias.</p>
     <form method="post">
       {% csrf_token %}
       {% if form.non_field_errors %}<div class="login-errors" role="alert">{{ form.non_field_errors }}</div>{% endif %}

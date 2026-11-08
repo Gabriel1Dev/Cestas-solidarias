@@ -20,3 +20,37 @@ body .app-workspace>main.main-shell{padding-bottom:100px!important}
 @media(max-width:768px){body .app-sidebar,body.overview-page .app-sidebar{width:100%!important;max-width:none!important;flex-basis:auto!important;min-height:0!important;height:auto!important}.masthead-left{min-width:0}.masthead-breadcrumb .breadcrumb-sep{display:none}.masthead-right .operator-name{max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.phone-menu nav{width:100%}.phone-menu summary{min-height:48px}}
 @media(max-width:400px){.masthead-clock{display:none!important}.masthead-right .operator-name{max-width:90px}.app-masthead{gap:8px!important}.masthead-breadcrumb{font-size:13px}}
 @media(max-width:649px){.form-panel,.padded{padding:18px}.form-actions{flex-direction:column}.form-actions .btn{width:100%}.form-section-heading{gap:10px}.triage-card summary{align-items:flex-start}.triage-card summary>span:first-child{min-width:0;overflow-wrap:anywhere}.heading-actions{flex-wrap:wrap}.main-shell{max-width:100%}.counter-summary dl{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:18px}.counter-summary dl>div{border:0!important;padding:0!important}.module-results .table-responsive{max-width:100%}.module-results .empty-state{overflow-wrap:anywhere}}
+
+/* Keep the figures comfortably inside the summary's dividing lines. */
+.counter-summary dl{grid-template-columns:repeat(4,minmax(0,1fr));margin:0;padding:14px 0}
+.counter-summary dl>div{min-width:0;padding:10px 16px 14px}
+.counter-summary dd{line-height:1.2;margin:12px 0 0}
+@media(max-width:649px){
+ .counter-summary dl{gap:0!important;padding:8px 0}
+ .counter-summary dl>div{padding:12px 10px 16px!important;min-height:84px}
+ .counter-summary dt{line-height:1.4;overflow-wrap:anywhere}
+ .counter-summary dd{margin:8px 0 0;font-size:26px}
+ .intake-capsule{flex-wrap:wrap}
+ .intake-capsule input{min-width:0;flex:1 1 160px}
+ .intake-capsule .btn{min-height:44px}
+}
+
+/* Shared surfaces and a focused, welcoming sign-in. */
+body.login-page .login-shell{min-height:100dvh;background:radial-gradient(circle at 15% 18%,#f2d4c4 0,transparent 40%),radial-gradient(circle at 88% 82%,#a6d4dc 0,transparent 42%),linear-gradient(135deg,#e5dfd3,#c4dde0)}
+body.login-page .login-shell>main.main-shell{max-width:520px;padding:76px 20px 40px}
+body.login-page .login-layout{display:block;max-width:440px;overflow:visible;background:transparent;border:0;box-shadow:none}
+body.login-page .login-card{position:relative;display:block;padding:66px 42px 38px!important;border:1px solid rgba(255,255,255,.9)!important;border-radius:24px!important;background:rgba(255,255,255,.93);box-shadow:0 24px 60px rgba(19,49,65,.16)!important;text-align:center}
+body.login-page .login-emblem{position:absolute;top:-45px;left:50%;transform:translateX(-50%);width:90px;height:90px;display:grid;place-items:center;padding:15px;border:5px solid #e5edeb;border-radius:50%;background:#103853;box-shadow:0 8px 24px rgba(16,56,83,.18)}
+body.login-page .login-emblem svg{width:100%;height:100%}
+body.login-page .login-brand-name{margin:0 0 18px;color:#176f7d;font-size:13px;font-weight:750;letter-spacing:.08em;text-transform:uppercase}
+body.login-page .login-card h1{font-size:30px;color:#112d42}
+body.login-page .login-intro{margin:0;color:#496270;line-height:1.5}
+body.login-page .login-card form{margin-top:26px;text-align:left}
+body.login-page .login-field input{background:#f4f8f8;border:1px solid #b8ccd0;border-radius:10px;min-height:52px;color:#132f40}
+body.login-page .login-field input:focus{outline:3px solid rgba(22,147,165,.24);border-color:#147d8d}
+body.login-page .login-card .btn{min-height:52px;border-radius:10px;background:#126f80;border-color:#126f80;font-weight:700}
+body.login-page .login-card .btn:hover{background:#0c5666;border-color:#0c5666}
+body:not(.login-page) .app-workspace{background:#f3f7f6}
+body:not(.login-page) .form-panel,body:not(.login-page) .triage-card,body:not(.login-page) .module-results{border-color:#d8e5e2;box-shadow:0 5px 20px rgba(20,54,63,.04)}
+body:not(.login-page) .form-panel input:focus,body:not(.login-page) .form-panel select:focus,body:not(.login-page) .form-panel textarea:focus{outline:3px solid rgba(22,147,165,.20);border-color:#147d8d}
+@media(max-width:649px){body.login-page .login-shell>main.main-shell{padding:72px 16px 32px}body.login-page .login-card{padding:60px 24px 28px!important}body.login-page .login-card h1{font-size:27px}body.login-page .login-emblem{width:84px;height:84px;top:-42px}}
