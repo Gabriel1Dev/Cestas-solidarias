@@ -1,5 +1,21 @@
 # Compatibilidade com o Projeto Alimento é Vida
 
+## Revisão de interface — 08/11/2026
+
+Navegação simplificada: agenda acessível pelo início e retiradas; configurações e histórico pelo menu da conta. As rotas e permissões permanecem, conferidas em banco local isolado; 17 testes passaram.
+
+Navegação: a página inicial mostra resumo e atalhos, enquanto a busca cadastral fica na consulta; retiradas mantém acesso direto às entregas. Sem alteração das regras ou permissões. Django check e 17 testes de fluxo passaram em banco isolado.
+
+Integração local do pacote do colaborador: app.css copiado integralmente, menu SVG adaptado às rotas atuais, com acesso da coordenação preservado. Django check e 17 testes de fluxo passaram; nove rotas autenticadas responderam em banco local isolado. A revisão visual renderizada permanece pendente. Sem publicação nesta rodada.
+
+Verificação visual e de controles: busca com recuo e foco no contêiner, controles de 44 px, seletor de relatório de 48 px e ações do diálogo padronizadas. `manage.py check` sem erros e 50 testes Django passaram em banco isolado. Impeccable não encontrou ocorrências nos CSS; verificações dependentes de página renderizada permanecem pendentes.
+
+Integração visual do pacote do colaborador: busca com ícone e recuo preservados, mantendo os filtros de triagem e regras atuais. A versão principal e o novo espelho foram sincronizados; 17 testes de fluxo passaram em banco local isolado. A auditoria de CSS isolado não substitui a conferência visual renderizada.
+
+Revisão posterior de consistência visual: estilos compartilhados para painéis, filtros, botões, tabelas e relatórios; renderização autenticada de nove rotas conferida com banco local isolado. A conferência visual autenticada no navegador permanece pendente por bloqueio de acesso ao endereço local.
+
+Ajustados o fundo da entrada, superfícies de atendimento, foco de teclado, resumo de erros e atalhos móveis para consulta e entregas. As regras de atendimento, triagem, prorrogação e datas permanecem as decisões documentadas abaixo. Em banco local isolado, 17 testes de fluxo e política passaram e `manage.py check` não apontou problemas. O navegador interno bloqueou o acesso ao ambiente local; a revisão visual e de interação autenticada permanece pendente.
+
 ## Atualização local de 08/11/2026
 
 O usuário decidiu que uma pessoa usará uma conta, CPF existente será confirmado com histórico preservado, prorrogação será após o encerramento por 1 a 3 meses sem justificativa, e data real poderá ser diferente da prevista, sem entrega automática por ausência. Essas decisões substituem as interpretações anteriores sobre registro de entregas e justificativa de prorrogação.
@@ -94,3 +110,20 @@ A data real pode divergir da prevista; serviço e gatilho validam atendimento ap
 6. Conferir indicadores, filtros, PDF e terminologia de atendimento por CPF.
 7. Validar celular, navegação, erros e permissões no navegador.
 8. Registrar resultados, limitações e pendências; não marcar conformidade total com lacunas abertas.
+
+Cadastro para entrevista: CPF verificado no início, teclado apropriado para CPF e telefone, pergunta escolar condicional e uma cesta preenchida ao selecionar domicílio sem crianças. Django check e 17 testes passaram em banco isolado. No Chromium a 390 px, foram conferidos a ordem, o modo de entrada, a verificação de CPF por Enter e as mudanças da seção de crianças.
+
+Na entrevista, a data predefinida fica em um ajuste recolhido, e a duração fica recolhida quando o domicílio sem crianças recebe uma cesta. Chromium a 390 px confirmou a edição da data, o envio do valor de duração e a exibição das perguntas condicionais.
+
+Prévia local configurada para aceitar CPF e RG nos novos registros. O cadastro mantém CPF e seleciona RG automaticamente quando ele é o único tipo complementar aceito. Chromium confirmou o campo Número do RG e o tipo enviado. O formulário de configurações apresentou falha preexistente ao auditar o horário de distribuição. A configuração foi feita apenas no banco local isolado.
+
+O aviso de backup no Início oferece download direto pela rota administrativa existente. Chromium a 390 px confirmou o download do JSON e a permanência no Início usando banco isolado. A confirmação da guarda externa segue separada.
+
+Relatórios: indicadores gerais de cadastro e triagem, gráfico mensal de entregas pela data real e PDF com a paleta do sistema. Os filtros continuam restritos à exportação. Validados os totais com dados fictícios revertidos em banco isolado, exportação filtrada e vazia, download no Chromium e layout a 320, 390 e 1440 px. PDF fictício paginado conferido com Poppler.
+
+Relatórios: a situação da triagem usa gráfico de rosca com contagens e percentuais, animado ao abrir a página quando há cadastros. O gráfico mensal e a exportação seguem separados. Django check e teste de exportação PDF passaram em PostgreSQL local. No Chromium, giro e preenchimento foram confirmados com números fictícios a 320 e 1440 px e o estado vazio a 390 px. Sem escrita em dados reais.
+Triagem e cadastro: frequência escolar com opções selecionáveis e preservação de valores anteriores. Aprovação dispensa justificativa, recusa exige justificativa. Identificação duplicada informa o tipo do documento. Django check e 13 testes do fluxo passaram em banco isolado.
+Cadastro e revisão: informações essenciais da triagem opcionais por decisão do usuário. O motivo principal continua solicitado. Django check e 13 testes do fluxo passaram em banco isolado.
+Cadastro e triagem: opções predefinidas para informações essenciais e justificativa de não aprovação, com campo Outros. Observações existentes são preservadas. Django check e 13 testes do fluxo passaram em banco isolado.
+Cadastro organizado em quatro etapas no navegador, preservando os campos e envio originais. Navegação inicial conferida no navegador local; Django check e 13 testes passaram em banco isolado. Falta validação do fluxo completo com a pessoa responsável.
+Aviso de CPF existente recebeu ajustes de posicionamento e apresentação para telas pequenas. Django check sem erros. Validação visual do diálogo pendente.

@@ -1,12 +1,16 @@
 {% load static %}<!doctype html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-motion="on">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Cestas Solidárias{% endblock %}</title>
   <link rel="stylesheet" href="{% static 'vendor/bootstrap.min.css' %}">
-  <link rel="stylesheet" href="{% static 'app.css' %}?v=colaborador-integrado-1">
-  <link rel="stylesheet" href="{% static 'workflow.css' %}?v=3">
+  <link rel="stylesheet" href="{% static 'app.css' %}?v=github-apple-glass-v16">
+  <link rel="stylesheet" href="{% static 'workflow.css' %}?v=github-apple-glass-v16">
+  <link rel="stylesheet" href="{% static 'theme.css' %}?v=14">
+  <script src="{% static 'navigation-motion.js' %}?v=3" defer></script>
+  <script src="{% static 'input-masks.js' %}?v=1" defer></script>
+  <script src="{% static 'triage-options.js' %}?v=1" defer></script>
 </head>
 <body class="{% block body_class %}{% endblock %}">
 
@@ -23,7 +27,7 @@
     <nav class="masthead-breadcrumb" aria-label="Localização">
       <span class="breadcrumb-institute" title="{{ institute }}">{{ institute|default:'Instituto' }}</span>
       <span class="breadcrumb-sep">/</span>
-      <span class="breadcrumb-page">{% with route=request.resolver_match.url_name %}{% if route == 'dashboard' %}Atendimento{% elif route == 'consultation' or route == 'consultation_family' %}Consultar famílias{% elif route == 'new_family' %}Cadastrar família{% elif route == 'withdrawals' or route == 'family' or route == 'delivery' or route == 'edit' or route == 'member' or route == 'person_edit' or route == 'annotate_delivery' %}Retiradas{% elif route == 'triage' or route == 'decide_triage' %}Triagens{% elif route == 'agenda' or route == 'reschedule' %}Agenda{% elif route == 'extension' %}Prorrogação{% elif route == 'reports' or route == 'export' %}Relatórios{% elif route == 'settings' or route == 'backup' %}Configurações e backup{% elif route == 'audits' %}Auditoria{% else %}Atendimento{% endif %}{% endwith %}</span>
+      <span class="breadcrumb-page">{% with route=request.resolver_match.url_name %}{% if route == 'dashboard' %}Início{% elif route == 'consultation' or route == 'consultation_family' %}Consultar famílias{% elif route == 'new_family' %}Cadastrar família{% elif route == 'withdrawals' or route == 'family' or route == 'delivery' or route == 'edit' or route == 'member' or route == 'person_edit' or route == 'annotate_delivery' %}Retiradas{% elif route == 'triage' or route == 'decide_triage' %}Triagens{% elif route == 'agenda' or route == 'reschedule' %}Agenda{% elif route == 'extension' %}Prorrogação{% elif route == 'reports' or route == 'export' %}Relatórios{% elif route == 'settings' or route == 'backup' %}Configurações e backup{% elif route == 'audits' %}Auditoria{% else %}Atendimento{% endif %}{% endwith %}</span>
     </nav>
   </div>
 
@@ -96,8 +100,10 @@
 
 {% if user.is_authenticated %}
 <nav class="bottom-nav" aria-label="Ações rápidas">
-  <a href="{% url 'dashboard' %}" {% if request.resolver_match.url_name == 'dashboard' %}aria-current="page"{% endif %}>Atender</a>
+  <a href="{% url 'dashboard' %}" {% if request.resolver_match.url_name == 'dashboard' %}aria-current="page"{% endif %}>Início</a>
+  <a href="{% url 'consultation' %}" {% if request.resolver_match.url_name == 'consultation' or request.resolver_match.url_name == 'consultation_family' %}aria-current="page"{% endif %}>Consultar</a>
   <a href="{% url 'new_family' %}" {% if request.resolver_match.url_name == 'new_family' %}aria-current="page"{% endif %}>Cadastrar</a>
+  <a href="{% url 'withdrawals' %}" {% if request.resolver_match.url_name == 'withdrawals' %}aria-current="page"{% endif %}>Entregas</a>
   <a href="{% url 'reports' %}" {% if request.resolver_match.url_name == 'reports' %}aria-current="page"{% endif %}>Relatórios</a>
 </nav>
 

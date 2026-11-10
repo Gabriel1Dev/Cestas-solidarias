@@ -21,9 +21,9 @@ class FamilyForm(PersonFields):
     address=forms.CharField(label='Endereço',max_length=240)
     start=forms.DateField(label='Data do primeiro atendimento',widget=forms.DateInput(format='%Y-%m-%d',attrs={'type':'date'}),help_text='O sistema agendará a primeira entrega no próximo segundo sábado.')
     residents_count=forms.IntegerField(label='Quantas pessoas moram no endereço?',min_value=1,max_value=40)
-    children_school_frequency=forms.CharField(label='Frequência escolar das crianças',max_length=300,required=False,help_text='Informe a frequência, ou explique por que não se aplica.')
+    children_school_frequency=forms.CharField(label='Frequência escolar das crianças',max_length=300,required=False,widget=forms.Select(choices=[('', 'Selecione'),('Frequenta regularmente','Frequenta regularmente'),('Frequência irregular','Frequência irregular'),('Não frequenta','Não frequenta'),('Não se aplica','Não se aplica')]))
     screening_reason=forms.ChoiceField(label='Motivo principal da solicitação',choices=[('', 'Selecione'),('unemployment','Desemprego'),('health','Problema de saúde'),('accident','Acidente ou emergência'),('other','Outra situação de vulnerabilidade')])
-    screening_notes=forms.CharField(label='Informações essenciais da triagem',widget=forms.Textarea(attrs={'rows':4}),max_length=2000,help_text='Registre apenas o necessário para a avaliação social.')
+    screening_notes=forms.CharField(label='Informações essenciais da triagem (opcional)',required=False,widget=forms.Textarea(attrs={'rows':4}),max_length=2000,help_text='Registre apenas o necessário para a avaliação social.')
     personal_documents_seen=forms.BooleanField(label='CPF e documento de identificação conferidos',required=False)
     address_proof_seen=forms.BooleanField(label='Comprovante de endereço conferido',required=False)
     def clean(self):
@@ -40,6 +40,10 @@ class FamilyForm(PersonFields):
         self.fields['kind'].initial='CPF'
         self.fields['kind'].label='Documento do responsável'
         self.fields['number'].label='CPF do responsável'
+        school = self.fields['children_school_frequency'].widget
+        previous = self.initial.get('children_school_frequency')
+        if previous and previous not in [value for value, label in school.choices]:
+            school.choices = list(school.choices) + [(previous, previous)]
         valid=[s.strip() for s in Configuration.current().document_types.split(',') if s.strip() and s.strip().upper()!='CPF']
         self.fields['identity_kind'].choices=[('', 'Selecione'),*((value,value) for value in valid)]
         self.order_fields(['name','birth','kind','number','identity_kind','identity_number','phone','address','start','residents_count','has_children','months','children_school_frequency','screening_reason','screening_notes','personal_documents_seen','address_proof_seen','person_id','review_reason'])
@@ -103,18 +107,22 @@ class DecisionForm(forms.Form):
 class ScreeningReviewForm(forms.Form):
     residents_count=forms.IntegerField(label='Moradores',min_value=1,max_value=40)
     months=forms.TypedChoiceField(label='Duração inicial do atendimento',choices=[(i,f'{i} mês' if i==1 else f'{i} meses') for i in range(1,4)],coerce=int)
-    children_school_frequency=forms.CharField(label='Escola/frequência das crianças ou justificativa',max_length=300,required=False)
+    children_school_frequency=forms.CharField(label='Frequência escolar das crianças',max_length=300,required=False,widget=forms.Select(choices=[('', 'Selecione'),('Frequenta regularmente','Frequenta regularmente'),('Frequência irregular','Frequência irregular'),('Não frequenta','Não frequenta'),('Não se aplica','Não se aplica')]))
     screening_reason=forms.ChoiceField(label='Motivo principal',choices=[('unemployment','Desemprego'),('health','Problema de saúde'),('accident','Acidente/emergência'),('other','Outra vulnerabilidade')])
-    screening_notes=forms.CharField(label='Informações essenciais da triagem',widget=forms.Textarea(attrs={'rows':3}),max_length=2000)
+    screening_notes=forms.CharField(label='Informações essenciais da triagem (opcional)',required=False,widget=forms.Textarea(attrs={'rows':3}),max_length=2000)
     personal_documents_seen=forms.BooleanField(label='CPF e identificação conferidos',required=False)
     address_proof_seen=forms.BooleanField(label='Comprovante de endereço conferido',required=False)
-    reason=forms.CharField(label='Justificativa da decisão da coordenação',min_length=10,max_length=300,widget=forms.Textarea(attrs={'rows':2}))
+    reason=forms.CharField(label='Justificativa para não aprovação',required=False,max_length=300,widget=forms.Textarea(attrs={'rows':2}))
     has_children=forms.BooleanField(label='Há crianças no domicílio?',required=False)
     cpf_number=forms.CharField(label='CPF do responsável',max_length=80,required=False)
     identity_kind=forms.ChoiceField(label='Tipo do documento de identificação',required=False)
     identity_number=forms.CharField(label='Número do documento de identificação',max_length=80,required=False)
     def __init__(self,*args,**kwargs):
         super().__init__(*args,**kwargs)
+        school = self.fields['children_school_frequency'].widget
+        previous = self.initial.get('children_school_frequency')
+        if previous and previous not in [value for value, label in school.choices]:
+            school.choices = list(school.choices) + [(previous, previous)]
         valid=[s.strip() for s in Configuration.current().document_types.split(',') if s.strip() and s.strip().upper()!='CPF']
         self.fields['identity_kind'].choices=[('', 'Selecione'),*((value,value) for value in valid)]
     def clean(self):

@@ -1,9 +1,148 @@
 {% extends 'base.html' %}{% block content %}
 <div class="page-heading"><div><p class="eyebrow">ATENDIMENTO</p><h1>{{ title }}</h1><p>{{ intro }}</p></div></div>
-<section class="panel form-panel"><form method="post">{% csrf_token %}{{ form.non_field_errors }}
-{% for field in form %}{% if field.name != 'person_id' and field.name != 'review_reason' %}
-{% if request.resolver_match.url_name == 'new_family' %}{% if field.name == 'name' %}<div class="form-section-heading"><span>1</span><div><h2>Dados do responsável</h2><p>Para uma pessoa nova, informe nome, nascimento, CPF e documento de identificação.</p></div></div>{% elif field.name == 'address' %}<div class="form-section-heading"><span>2</span><div><h2>Residência</h2><p>Informe onde a família mora e quantas pessoas vivem no endereço.</p></div></div>{% elif field.name == 'has_children' %}<div class="form-section-heading"><span>3</span><div><h2>Composição da família</h2><p>Essas informações ajudam a definir a duração inicial do atendimento.</p></div></div>{% elif field.name == 'screening_reason' %}<div class="form-section-heading"><span>4</span><div><h2>Informações para triagem</h2><p>Registre o necessário para a avaliação da coordenação.</p></div></div>{% endif %}{% endif %}
-{% if field.is_hidden %}{{ field }}{% else %}<div class="form-field {% if field.field.widget.input_type == 'checkbox' %}check-field{% endif %}">{{ field.label_tag }}{% if field.field.required %}<span class="required-note">Obrigatório</span>{% endif %}{{ field.errors }}{{ field }}{% if request.resolver_match.url_name == 'new_family' and field.name == 'number' %}<button type="submit" class="btn btn-outline-secondary" name="check_cpf" value="1" formnovalidate>Verificar CPF</button>{% endif %}{% if field.help_text %}<span class="helptext" id="{{ field.auto_id }}_helptext">{{ field.help_text }}</span>{% endif %}</div>{% endif %}
-{% endif %}{% endfor %}
+<section class="panel form-panel"><form method="post"{% if request.resolver_match.url_name == 'new_family' %} id="interview-form"{% endif %}>{% csrf_token %}{% if form.errors and not request.POST.check_cpf %}<div class="form-error-summary" role="alert" tabindex="-1"><strong>Confira as informações do formulário</strong><p>Revise os campos indicados abaixo antes de continuar.</p>{{ form.non_field_errors }}</div>{% endif %}
+{% if request.resolver_match.url_name == 'new_family' %}
+<div class="form-field interview-cpf">
+  {{ form.number.label_tag }}
+  {{ form.number.errors }}
+  <div class="interview-cpf-controls">
+    {{ form.number }}
+    <button type="submit" class="btn btn-outline-secondary" name="check_cpf" value="1" formnovalidate>Verificar CPF</button>
+  </div>
+  <small class="helptext">Confira primeiro se a pessoa já tem cadastro.</small>
+</div>
+{% endif %}
+{% for field in form %}{% if field.name != 'number' or request.resolver_match.url_name != 'new_family' %}{% if field.name != 'person_id' and field.name != 'review_reason' %}
+{% if request.resolver_match.url_name == 'new_family' %}{% if field.name == 'name' %}<div class="form-section-heading"><span>1</span><div><h2>Dados do responsável</h2></div></div>{% elif field.name == 'address' %}<div class="form-section-heading"><span>2</span><div><h2>Residência</h2></div></div>{% elif field.name == 'has_children' %}<div class="form-section-heading"><span>3</span><div><h2>Composição da família</h2></div></div>{% elif field.name == 'screening_reason' %}<div class="form-section-heading"><span>4</span><div><h2>Informações para triagem</h2></div></div>{% endif %}{% endif %}
+{% if field.name == 'start' and request.resolver_match.url_name == 'new_family' %}<details class="reuse-person"{% if field.errors or not field.value %} open{% endif %}><summary>Alterar data do primeiro atendimento</summary>{% endif %}{% if field.is_hidden %}{{ field }}{% else %}<div data-field="{{ field.name }}" class="form-field {% if field.field.widget.input_type == 'checkbox' %}check-field{% endif %}">{{ field.label_tag }}{% if field.field.required %}<span class="required-note">Obrigatório</span>{% endif %}{% if not request.POST.check_cpf %}{{ field.errors }}{% endif %}{{ field }}{% if field.help_text %}<span class="helptext" id="{{ field.auto_id }}_helptext">{{ field.help_text }}</span>{% endif %}</div>{% endif %}
+{% if field.name == 'start' and request.resolver_match.url_name == 'new_family' %}</details>{% endif %}
+{% endif %}{% endif %}{% endfor %}
 {% if form.person_id %}<details class="reuse-person"{% if form.person_id.value or form.person_id.errors or form.review_reason.errors %} open{% endif %}><summary>Já existe um cadastro para esta pessoa?</summary><p>Use esta opção apenas quando encontrar a pessoa em outro cadastro. Para uma pessoa nova, deixe os campos abaixo em branco.</p><div class="form-field">{{ form.person_id.label_tag }}{{ form.person_id.errors }}{{ form.person_id }}<span class="helptext" id="{{ form.person_id.auto_id }}_helptext">{{ form.person_id.help_text }}</span></div><div class="form-field">{{ form.review_reason.label_tag }}{{ form.review_reason.errors }}{{ form.review_reason }}</div></details>{% endif %}
-<div class="form-actions"><button class="btn btn-primary">{{ button|default:'Salvar' }}</button><a class="btn btn-outline-secondary" href="{% url 'consultation' %}">Voltar à consulta</a></div></form></section>{% endblock %}
+<div class="form-actions"><button type="submit" class="btn btn-primary" data-interview-submit>{{ button|default:'Salvar' }}</button><a class="btn btn-outline-secondary" href="{% url 'consultation' %}">Voltar à consulta</a></div></form></section>
+{% if request.resolver_match.url_name == 'new_family' %}
+<script>
+(() => {
+  const form = document.getElementById('interview-form');
+  const cpf = form.elements.namedItem('number');
+  const children = form.elements.namedItem('has_children');
+  const duration = form.elements.namedItem('months');
+  const school = form.querySelector('[data-field="children_school_frequency"]');
+  const durationField = form.querySelector('[data-field="months"]');
+  const phone = form.elements.namedItem('phone');
+  cpf.inputMode = 'numeric';
+  phone.inputMode = 'tel';
+  phone.autocomplete = 'tel';
+
+  const identity = form.elements.namedItem('identity_kind');
+  const identityField = form.querySelector('[data-field="identity_kind"]');
+  const acceptedIdentity = Array.from(identity.options).filter(option => option.value);
+  if (acceptedIdentity.length === 1 && acceptedIdentity[0].value === 'RG' &&
+      !identityField.querySelector('.errorlist')) {
+    identity.value = 'RG';
+    identityField.hidden = true;
+    form.querySelector('[data-field="identity_number"] label').textContent = 'Número do RG';
+  }
+
+  function updateChildren(changed) {
+    const noChildren = children.value === 'no';
+    const hideSchool = noChildren && !school.querySelector('.errorlist') &&
+      !form.elements.namedItem('children_school_frequency').value.trim();
+    school.hidden = hideSchool;
+    if (noChildren && (changed || !duration.value)) duration.value = '1';
+    durationField.hidden = noChildren && duration.value === '1' && !durationField.querySelector('.errorlist');
+    for (const option of duration.options) {
+      option.disabled = noChildren && (option.value === '2' || option.value === '3') &&
+        option.value !== duration.value;
+    }
+  }
+
+  children.addEventListener('change', () => updateChildren(true));
+  updateChildren(false);
+  // Group the existing fields without changing their names or submitted values.
+  const headings = Array.from(form.querySelectorAll('.form-section-heading'));
+  const actions = form.querySelector('.form-actions');
+  const groups = [];
+  headings.forEach((heading, index) => {
+    const section = document.createElement('section');
+    section.className = 'interview-step';
+    section.setAttribute('aria-label', heading.textContent.trim());
+    heading.before(section);
+    let node = heading;
+    const stop = headings[index + 1] || actions;
+    while (node && node !== stop) {
+      const next = node.nextSibling;
+      section.appendChild(node);
+      node = next;
+    }
+    groups.push(section);
+  });
+  groups[0].insertBefore(form.querySelector('.interview-cpf'), groups[0].children[1] || null);
+
+  const progress = document.createElement('p');
+  progress.className = 'interview-progress';
+  progress.setAttribute('aria-live', 'polite');
+  progress.tabIndex = -1;
+  groups[0].before(progress);
+  const back = document.createElement('button');
+  back.type = 'button';
+  back.className = 'btn btn-outline-secondary';
+  back.textContent = 'Etapa anterior';
+  const next = document.createElement('button');
+  next.type = 'button';
+  next.className = 'btn btn-primary';
+  next.textContent = 'Próxima etapa';
+  const submit = form.querySelector('[data-interview-submit]');
+  actions.prepend(back, next);
+  form.noValidate = true;
+  let current = Math.max(0, groups.findIndex(group => group.querySelector('.errorlist')));
+  if (form.querySelector('.interview-cpf .errorlist')) current = 0;
+
+  function showStep(index) {
+    current = index;
+    groups.forEach((group, i) => { group.hidden = i !== current; });
+    back.hidden = current === 0;
+    next.hidden = current === groups.length - 1;
+    submit.hidden = current !== groups.length - 1;
+    progress.textContent = 'Etapa ' + (current + 1) + ' de ' + groups.length;
+  }
+  function validateStep(index) {
+    const fields = groups[index].querySelectorAll('input, select, textarea');
+    for (const field of fields) {
+      if (field.disabled || field.type === 'hidden' || field.closest('[hidden]')) continue;
+      if (!field.checkValidity()) {
+        const details = field.closest('details');
+        if (details) details.open = true;
+        field.reportValidity();
+        return false;
+      }
+    }
+    return true;
+  }
+  back.addEventListener('click', () => showStep(current - 1));
+  next.addEventListener('click', () => {
+    if (validateStep(current)) {
+      showStep(current + 1);
+      progress.focus();
+    }
+  });
+  form.addEventListener('submit', event => {
+    if (event.submitter && event.submitter.name === 'check_cpf') return;
+    for (let index = 0; index < groups.length; index++) {
+      showStep(index);
+      if (!validateStep(index)) { event.preventDefault(); return; }
+    }
+  });
+  form.addEventListener('keydown', event => {
+    if (event.key !== 'Enter' || event.isComposing || !(event.target instanceof HTMLInputElement) ||
+        ['checkbox', 'radio', 'submit', 'button'].includes(event.target.type)) return;
+    event.preventDefault();
+    if (event.target === cpf) form.requestSubmit(form.elements.namedItem('check_cpf'));
+    else if (current < groups.length - 1) next.click();
+    else form.requestSubmit(submit);
+  });
+  showStep(current);
+
+})();
+</script>
+{% endif %}
+{% endblock %}

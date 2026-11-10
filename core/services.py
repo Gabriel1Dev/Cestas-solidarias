@@ -66,7 +66,6 @@ def create_family(user,*,has_children=None,months=None,name='',birth=None,kind='
     if not 1<=residents_count<=40: raise ValidationError('Informe a quantidade de moradores (1 a 40).')
     if has_children=='yes' and not children_school_frequency.strip(): raise ValidationError('Informe a frequência escolar das crianças ou explique por que não se aplica.')
     if screening_reason not in ('unemployment','health','accident','other'): raise ValidationError('Selecione o motivo da solicitação.')
-    if len(screening_notes.strip())<5: raise ValidationError('Registre informações essenciais da triagem.')
     boundaries=distribution_periods(start,months)
     check_address_availability(address, boundaries[0][0], boundaries[-1][1])
     if person_id:
@@ -89,7 +88,7 @@ def create_family(user,*,has_children=None,months=None,name='',birth=None,kind='
     if identity_number:
         if identity_kind.upper()=='CPF' or identity_kind not in [x.strip() for x in cfg.document_types.split(',')]: raise ValidationError('Informe um documento de identificação aceito, como RG ou outro.')
         existing_identity=Document.objects.filter(number=identity_number).first()
-        if existing_identity and existing_identity.person_id!=p.pk: raise ValidationError('Esse documento de identificação já pertence a outra pessoa.')
+        if existing_identity and existing_identity.person_id!=p.pk: raise ValidationError(f'O documento {identity_kind} informado já pertence a outra pessoa.')
         if not existing_identity: Document.objects.create(person=p,kind=identity_kind,number=identity_number)
     if not p.documents.exclude(kind__iexact='CPF').exists(): raise ValidationError('Cadastre também o RG ou outro documento de identificação.')
     f=Family.objects.create(responsible=p,phone=phone.strip(),address=address.strip(),status='pending',residents_count=residents_count,children_school_frequency=children_school_frequency.strip(),screening_reason=screening_reason,screening_notes=screening_notes.strip(),personal_documents_seen=personal_documents_seen,address_proof_seen=address_proof_seen)
@@ -104,7 +103,8 @@ def create_family(user,*,has_children=None,months=None,name='',birth=None,kind='
 def decide_family(user,family,*,approved,reason,screening=None):
     admin(user)
     if family.status!='pending': raise ValidationError('Esta triagem já recebeu uma decisão.')
-    if not 10<=len(reason.strip())<=300: raise ValidationError('Explique a decisão da triagem (10 a 300 caracteres).')
+    if not approved and not 10<=len(reason.strip())<=300: raise ValidationError('Explique a não aprovação da triagem (10 a 300 caracteres).')
+    if approved and len(reason.strip())>300: raise ValidationError('A justificativa pode ter no máximo 300 caracteres.')
     screening=screening or {}
     children=screening.get('has_children',family.benefit.policy.get('has_children',False))
     months=screening.get('months',family.benefit.policy.get('months',1))
@@ -126,7 +126,7 @@ def decide_family(user,family,*,approved,reason,screening=None):
             id_kind=screening.get('identity_kind','')
             if not id_kind or id_kind.upper()=='CPF': raise ValidationError('Informe o tipo do documento de identificação.')
             existing=Document.objects.filter(number=id_number).first()
-            if existing and existing.person_id!=family.responsible_id: raise ValidationError('Esse documento de identificação já pertence a outra pessoa.')
+            if existing and existing.person_id!=family.responsible_id: raise ValidationError(f'O documento {id_kind} informado já pertence a outra pessoa.')
             if not existing: Document.objects.create(person=family.responsible,kind=id_kind,number=id_number)
         if not family.responsible.documents.exclude(kind__iexact='CPF').exists(): raise ValidationError('Cadastre o RG ou outro documento de identificação antes de aprovar.')
     if approved and (not screening.get('personal_documents_seen',family.personal_documents_seen) or not screening.get('address_proof_seen',family.address_proof_seen)):

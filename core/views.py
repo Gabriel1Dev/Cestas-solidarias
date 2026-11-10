@@ -3,13 +3,15 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Count, Q
+from django.db.models.functions import TruncMonth
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from .models import Family, Person, Document, Benefit, Period, Delivery, Audit, Configuration, BackupRun, BackupConfirmation
 from .forms import FamilyForm, MemberForm, EditFamilyForm, DeliveryForm, ConfigurationForm, PersonEditForm, ScreeningReviewForm, ExtensionForm, ScheduleAuthorizationForm
+from .periods import add_months
 from . import services
 def brand(request):
     try:
@@ -91,7 +93,7 @@ def decide_triage(request,pk,decision):
             services.decide_family(request.user,f,approved=decision=='aprovar',reason=reason,screening=data)
             messages.success(request,'Triagem concluída e registrada no histórico.')
         except ValidationError as e: messages.error(request,' '.join(e.messages))
-    else: messages.error(request,'Revise os dados e a justificativa da triagem. '+ '; '.join(str(e) for e in form.errors.values()))
+    else: messages.error(request,'Revise os dados da triagem. '+ '; '.join(str(e) for e in form.errors.values()))
     return redirect('triage')
 
 @login_required
@@ -243,7 +245,31 @@ def backup(request):
 @login_required
 def reports(request):
     services.operator(request.user)
-    return render(request,'reports.html',{'q':request.GET.get('q','').strip()})
+    status_counts = dict(Family.objects.values('status').annotate(total=Count('pk')).values_list('status', 'total'))
+    status_rows = [
+        ('Aprovadas', status_counts.get('approved', 0)),
+        ('Aguardando triagem', status_counts.get('pending', 0)),
+        ('Não aprovadas', status_counts.get('denied', 0)),
+    ]
+    today = timezone.localdate()
+    current_month = today.replace(day=1)
+    months = [add_months(current_month, offset) for offset in range(-5, 1)]
+    deliveries = dict(
+        Delivery.objects.filter(delivered_on__range=(months[0], today))
+        .annotate(month=TruncMonth('delivered_on'))
+        .values('month').annotate(total=Count('pk')).values_list('month', 'total')
+    )
+    delivery_rows = [(month, deliveries.get(month, 0)) for month in months]
+    return render(request, 'reports.html', {
+        'q': request.GET.get('q', '').strip(),
+        'total_families': sum(status_counts.values()),
+        'pending_triage': status_counts.get('pending', 0),
+        'month_deliveries': delivery_rows[-1][1],
+        'status_rows': status_rows,
+        'status_scale': max(1, *(total for _, total in status_rows)),
+        'delivery_rows': delivery_rows,
+        'delivery_scale': max(1, *(total for _, total in delivery_rows)),
+    })
 @login_required
 def export(request):
     services.operator(request.user)

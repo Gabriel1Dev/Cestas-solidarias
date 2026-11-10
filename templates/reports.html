@@ -1,6 +1,61 @@
 {% extends 'base.html' %}
 {% block content %}
-<header class="page-heading"><div><h1>Relatórios</h1><p>Escolha quais famílias incluir e baixe o relatório em PDF.</p></div></header>
+<header class="page-heading"><div><h1>Relatórios</h1><p>Acompanhe os cadastros e as entregas. Use os filtros abaixo para baixar o PDF.</p></div></header>
+
+<section class="report-overview" aria-labelledby="report-overview-title">
+  <h2 id="report-overview-title">Visão geral</h2>
+  <p>Os indicadores incluem todos os cadastros. Os filtros abaixo se aplicam ao PDF.</p>
+  <dl class="report-metrics">
+    <div class="panel"><dt>Famílias cadastradas</dt><dd>{{ total_families }}</dd></div>
+    <div class="panel"><dt>Aguardando triagem</dt><dd>{{ pending_triage }}</dd></div>
+    <div class="panel"><dt>Cestas entregues neste mês</dt><dd>{{ month_deliveries }}</dd></div>
+  </dl>
+  <div class="report-charts">
+    <section class="report-chart report-triage-chart" aria-labelledby="report-status-chart">
+      <h3 id="report-status-chart">Situação da triagem</h3>
+      <p>Distribuição dos cadastros por situação.</p>
+      <div class="report-donut-layout">
+        <div class="report-donut">
+          <svg viewBox="0 0 120 120" aria-hidden="true" focusable="false">
+            <defs>
+              <mask id="triage-donut-reveal" maskUnits="userSpaceOnUse" x="0" y="0" width="120" height="120">
+                <circle class="report-donut-reveal" cx="60" cy="60" r="48" stroke="white" stroke-width="20" fill="none" pathLength="100" stroke-dasharray="100 100"/>
+              </mask>
+            </defs>
+            <circle class="report-donut-track" cx="60" cy="60" r="48" fill="none" stroke-width="18"/>
+            <g class="report-donut-rotation">
+              <g transform="rotate(-90 60 60)" mask="url(#triage-donut-reveal)">
+                {% for label, total in status_rows %}
+                <circle class="report-donut-slice report-status-tone-{{ forloop.counter }}" cx="60" cy="60" r="48" fill="none" stroke-width="18" pathLength="100" stroke-dasharray="0 100"/>
+                {% endfor %}
+              </g>
+            </g>
+          </svg>
+          <div class="report-donut-total"><strong>{{ total_families }}</strong><span>Famílias</span></div>
+        </div>
+        <ul class="report-donut-legend">
+          {% for label, total in status_rows %}
+          <li class="report-status-tone-{{ forloop.counter }}" data-count="{{ total|floatformat:'0u' }}">
+            <span class="report-donut-label">{{ label }}</span>
+            <strong>{{ total }}<span class="visually-hidden"> famílias</span></strong>
+            <span class="report-donut-percent"></span>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% if not total_families %}<p>Nenhuma família cadastrada ainda.</p>{% endif %}
+    </section>
+    <section class="report-chart" aria-labelledby="report-delivery-chart">
+      <h3 id="report-delivery-chart">Entregas nos últimos 6 meses</h3>
+      <p>Contagem pela data real da entrega.</p>
+      <ul class="report-bars">
+        {% for month, total in delivery_rows %}
+        <li><span>{{ month|date:"M/y" }}</span><meter aria-hidden="true" min="0" max="{{ delivery_scale }}" value="{{ total }}"></meter><strong>{{ total }}</strong></li>
+        {% endfor %}
+      </ul>
+    </section>
+  </div>
+</section>
 
 <div class="report-export-layout">
 <section class="report-export"><h2>Relatório de famílias</h2><p>Reúna as informações das famílias para consultar ou imprimir.</p>
@@ -27,6 +82,22 @@
 </aside></div>
 <script>
 (function(){
+const chart = document.querySelector('.report-donut-layout');
+const slices = chart.querySelectorAll('.report-donut-slice');
+const entries = Array.from(chart.querySelectorAll('[data-count]'));
+const counts = entries.map(entry => Number(entry.dataset.count));
+const total = counts.reduce((sum, count) => sum + count, 0);
+const percentFormat = new Intl.NumberFormat('pt-BR', {style: 'percent', maximumFractionDigits: 1});
+let offset = 0;
+entries.forEach((entry, index) => {
+  const share = total ? counts[index] / total : 0;
+  entry.querySelector('.report-donut-percent').textContent = percentFormat.format(share);
+  slices[index].setAttribute('stroke-dasharray', (share * 100) + ' 100');
+  slices[index].setAttribute('stroke-dashoffset', -(offset * 100));
+  offset += share;
+});
+if (total > 0) chart.classList.add('has-triage-data');
+
 const picker=document.querySelector('.report-status-picker');
 const current=document.getElementById('report-status-current');
 picker.querySelectorAll('input[name="status"]').forEach(input=>input.addEventListener('change',function(){
