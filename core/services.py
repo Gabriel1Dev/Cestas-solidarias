@@ -139,6 +139,8 @@ def decide_family(user,family,*,approved,reason,screening=None):
         if Delivery.objects.filter(period__benefit=benefit).exists() or benefit.extensions.exists():
             raise ValidationError('Não é possível alterar a duração após existir entrega ou prorrogação.')
         boundaries=distribution_periods(benefit.original_start,months)
+        if approved:
+            check_address_availability(family.address, boundaries[0][0], boundaries[-1][1], exclude_family=family.pk)
         policy=dict(benefit.policy)
         policy.update({'months':months,'has_children':bool(children),'periods':[{'start':str(a),'end':str(z)} for a,z in boundaries]})
         # Permit a narrowly scoped database exception only while this pending

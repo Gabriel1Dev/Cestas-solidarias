@@ -25,6 +25,7 @@
       choices.add(new Option(config.empty, ''));
       config.options.forEach(option => choices.add(new Option(option, option)));
       choices.add(new Option('Outros', '__other__'));
+      if (field.labels.length) field.labels[0].htmlFor = choices.id;
       const existing = field.value;
       choices.value = !existing ? '' : config.options.includes(existing) ? existing : '__other__';
       const custom = document.createElement('div');

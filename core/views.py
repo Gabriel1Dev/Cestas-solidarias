@@ -72,14 +72,20 @@ def withdrawals(request):
 def triage(request):
     services.operator(request.user)
     if not request.user.is_superuser: return HttpResponse(status=403)
+    return render(request, 'triage.html', {'entries': triage_entries()})
+
+def triage_entries(reviewed_family=None, review_form=None):
     rows=Family.objects.filter(status='pending').select_related('responsible','benefit').order_by('created_at')
     entries=[]
     for f in rows:
+        if f.pk == reviewed_family:
+            entries.append({'family': f, 'form': review_form})
+            continue
         current_cpf=f.responsible.documents.filter(kind__iexact='CPF').first()
         current_id=f.responsible.documents.exclude(kind__iexact='CPF').first()
         initial={'residents_count':f.residents_count,'months':f.benefit.policy.get('months',1),'children_school_frequency':f.children_school_frequency,'screening_reason':f.screening_reason or 'other','screening_notes':f.screening_notes,'personal_documents_seen':f.personal_documents_seen,'address_proof_seen':f.address_proof_seen,'has_children':f.benefit.policy.get('has_children',False),'cpf_number':current_cpf.number if current_cpf else '','identity_kind':current_id.kind if current_id else '','identity_number':current_id.number if current_id else ''}
         entries.append({'family':f,'form':ScreeningReviewForm(initial=initial,prefix=f'triage-{f.pk}')})
-    return render(request,'triage.html',{'entries':entries})
+    return entries
 
 @login_required
 def decide_triage(request,pk,decision):
@@ -92,9 +98,13 @@ def decide_triage(request,pk,decision):
             data=form.cleaned_data.copy();reason=data.pop('reason')
             services.decide_family(request.user,f,approved=decision=='aprovar',reason=reason,screening=data)
             messages.success(request,'Triagem concluída e registrada no histórico.')
-        except ValidationError as e: messages.error(request,' '.join(e.messages))
-    else: messages.error(request,'Revise os dados da triagem. '+ '; '.join(str(e) for e in form.errors.values()))
-    return redirect('triage')
+            return redirect('triage')
+        except ValidationError as exc:
+            form.add_error(None, exc)
+    if not Family.objects.filter(pk=f.pk, status='pending').exists():
+        messages.info(request, 'Esta triagem já recebeu uma decisão.')
+        return redirect('triage')
+    return render(request, 'triage.html', {'entries': triage_entries(f.pk, form)})
 
 @login_required
 def extension(request,pk):
@@ -219,7 +229,10 @@ def settings_view(request):
         with transaction.atomic():
             before=Configuration.objects.values().get(pk=1)
             form.save()
-            services.audit(request.user,'Configuração','config','Alteração pelo administrador',before,Configuration.objects.values().get(pk=1))
+            after=Configuration.objects.values().get(pk=1)
+            for snapshot in (before, after):
+                snapshot['distribution_time'] = snapshot['distribution_time'].isoformat()
+            services.audit(request.user,'Configuração','config','Alteração pelo administrador',before,after)
         messages.success(request,'Configurações salvas. Benefícios existentes mantêm seus períodos.'); return redirect('settings')
     return render(request,'settings.html',{'form':form,'runs':BackupRun.objects.all()[:15],'last_success':BackupConfirmation.objects.order_by('-at').first(),'cfg':cfg})
 @login_required

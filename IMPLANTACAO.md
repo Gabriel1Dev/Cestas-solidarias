@@ -1,47 +1,27 @@
-# Estado para continuar a implantação
+# Implantação e manutenção — Cestas Solidárias
 
-## Revisão local em 07/11/2026 — atenção
+O [sistema de produção](https://cestas-solidarias-seven.vercel.app/) usa o projeto **cestas-solidarias** da equipe Vercel **gabriel1devs-projects**, com framework Django. O código está em [Gabriel1Dev/Cestas-solidarias](https://github.com/Gabriel1Dev/Cestas-solidarias).
 
-As mudanças de triagem, duração, agenda do segundo sábado, exceções, backup e responsividade descritas no código não foram publicadas nesta rodada. As informações de deployment abaixo registram a infraestrutura e uma revisão anterior; **não indicam que esta revisão local esteja em produção**. Não aponte usuários para o serviço hospedado contando com as novas regras. Antes de promover esta revisão, compare a base e os ambientes, gere e valide backup independente, ensaie todas as migrações num banco separado e preserve o banco original. A publicação continua sujeita a autorização explícita do responsável.
+O banco fica no projeto Neon **Cestas Solidarias**, região de São Paulo, branch **producao**, banco **cestas**, PostgreSQL 17. As migrações 0001 a 0011 estão aplicadas. As variáveis de produção ficam na Vercel. Use a conexão direta para migrações e a conexão pooled para a aplicação.
 
-Data: 06/11/2026. O projeto online está separado da entrega local. Nenhuma senha ou conexão privada é guardada neste arquivo.
+## Cópias de segurança
 
-## Neon
+A rotina ativa fica no [repositório privado cestas-solidarias-backups](https://github.com/Gabriel1Dev/cestas-solidarias-backups). O agendamento consulta a hora da última cópia de hora em hora. O intervalo pode ser ajustado em **Configurações e backup**. O workflow usa um usuário PostgreSQL dedicado que lê os registros e confirma o envio. A primeira cópia foi confirmada em 10/11/2026. O agendamento antigo no repositório público foi desativado.
 
-- Organização: Gabriel — plano Free confirmado.
-- Projeto: **Cestas Solidarias**.
-- Região: São Paulo (`aws-sa-east-1`).
-- PostgreSQL: 17.
-- Projeto: `odd-cloud-91306564`.
-- Branch de produção: `producao`, `br-purple-moon-b6kwhxjb`.
-- Branch isolada: `validacao-inicial`, `br-blue-mouse-b6zrs03h`.
-- Banco: `cestas`; papel proprietário: `cestas_owner`.
-- Esquema completo aplicado nas duas branches, com 14 gatilhos de proteção. A base já possui cadastro de usuário e registros de atendimento; não trate a produção como vazia. Não recriar projeto ou trocar a branch ao continuar.
+Confira a última execução bem-sucedida em **Actions** no repositório privado. O artefato contém **cestas.dump** e o checksum **cestas.dump.sha256**. O backup preserva cadastros, contas e histórico. Sessões e contadores de tentativas de login são descartados.
 
-Obtenha a conexão pelo aplicativo Neon autorizado. Use endereço direto para migrações e pooled para o atendimento. Não coloque a conexão no repositório. As chaves operacionais estão configuradas como segredos de produção na Vercel. Não as substitua sem um procedimento de recuperação e preservação das assinaturas anteriores.
+Se a exportação JSON do aplicativo recusar uma entrega antiga ligada a uma família que a migração marcou como pendente, use a cópia PostgreSQL. A coordenação pode revisar a ficha na triagem, preservando a entrega histórica.
 
-## Vercel
+## Recuperação
 
-- Conta: `gabriel1dev`; espaço `gabriel1devs-projects`.
-- Autorização do espaço concluída, sem reconexão da conta.
-- Espaço: `team_EliQl5AdBDCSdmocrOFd77hq`.
-- Projeto: **cestas-solidarias**, `prj_zmB8tvfSU0ogcsme96RcB1bYtTfU`.
-- Endereço permanente: https://cestas-solidarias-seven.vercel.app.
-- Deployment final: `dpl_DuPZGtLTgnZk4LSr4kHcNbxysa5Y`, estado **READY**, produção.
-- Framework: Django; envio direto de arquivos, sem commit/repositório Git remoto.
-- Conexão do banco, chave Django, chave de assinatura dos backups e token inicial estão como segredos de produção. Os hosts/origens exatos estão configurados na hospedagem. Não há segredos neste documento.
-- O administrador inicial já foi criado pelo usuário. O link inicial fica bloqueado após a primeira conta; não existe senha padrão.
-- Login e arquivos estáticos responderam HTTP 200 sem conta Vercel; famílias sem login redirecionam à autenticação; configuração inicial sem token retorna 404; com o link privado retorna formulário.
-- A consulta dos logs da publicação final não encontrou erros fatais/de execução na janela verificada. Não há serviço externo de monitoramento/drain configurado.
+1. Baixe a cópia pelo repositório privado e confira o SHA-256.
+2. Prepare um banco PostgreSQL 17 vazio e separado. Restaure com **pg_restore --exit-on-error --no-owner --no-privileges --dbname=CONEXAO_DO_BANCO_NOVO cestas.dump**. Passe a conexão de forma segura, sem registrá-la no repositório.
+3. Confira migrações, contagens, gatilhos, acesso e histórico. Planeje a troca do banco da Vercel após essa conferência e preserve o banco anterior para retorno.
 
-## Dados e backup
+O ensaio local usa dados fictícios. A estrutura do arquivo de produção foi conferida no agendamento.
 
-O administrador inicial já foi criado pelo usuário. Ainda falta o agendamento de backup externo. Não há senha padrão. Configure o workflow somente em repositório privado, com os segredos e cotas verificados, e confirme o primeiro upload. O arquivo de origem e o guia estão nesta entrega. Não considere o atendimento liberado para uso real antes da conferência no Android e da cópia externa.
+## Rotina de manutenção
 
-## Atualização de relatórios — 06/11/2026
-
-Publicação READY com Equipe removida e relatórios PDF. Validada em ambiente separado com dados fictícios: 32 testes e sete verificações de recuperação aprovados; tela em 320, 390, 768 e 1440 pixels, sem transbordamento; download PDF realizado e renderizado. Produção conferida sem alterar registros reais: login HTTP 200, rotas antigas de usuários 404 e relatórios protegidos por autenticação.
-
-## Organização por função
-
-Atualização de consulta, cadastro, retiradas e relatórios documentada em MODULOS.md.
+- A responsável usa a conta da coordenação. A opção **Alterar senha** no menu da conta exige a senha atual. Em caso de perda de acesso, o técnico pode usar **python manage.py changepassword USUARIO** com a conexão direta de produção em um terminal privado.
+- Use **python tests/run_all.py** com **CESTAS_TEST_DATABASE_URL** apontando para o PostgreSQL local para validar código e recuperação.
+- Para mudar o esquema, ensaie a migração em banco isolado e confirme uma cópia externa antes de aplicá-la em produção. Para desfazer uma publicação de código, promova o último deployment saudável da Vercel. Reverta mudanças de banco pelo procedimento de recuperação.

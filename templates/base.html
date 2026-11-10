@@ -7,10 +7,10 @@
   <link rel="stylesheet" href="{% static 'vendor/bootstrap.min.css' %}">
   <link rel="stylesheet" href="{% static 'app.css' %}?v=github-apple-glass-v16">
   <link rel="stylesheet" href="{% static 'workflow.css' %}?v=github-apple-glass-v16">
-  <link rel="stylesheet" href="{% static 'theme.css' %}?v=14">
+  <link rel="stylesheet" href="{% static 'theme.css' %}?v=15">
   <script src="{% static 'navigation-motion.js' %}?v=3" defer></script>
   <script src="{% static 'input-masks.js' %}?v=1" defer></script>
-  <script src="{% static 'triage-options.js' %}?v=1" defer></script>
+  <script src="{% static 'triage-options.js' %}?v=2" defer></script>
 </head>
 <body class="{% block body_class %}{% endblock %}">
 
@@ -68,6 +68,9 @@
         <div class="popover-divider"></div>
         {% endif %}
 
+        <nav class="popover-admin-group" aria-label="Conta">
+          <a href="{% url 'password_change' %}" class="popover-link"><span>Alterar senha</span></a>
+        </nav>
         <form class="profile-logout-form" method="post" action="{% url 'logout' %}">
           {% csrf_token %}
           <button type="submit" class="profile-logout">

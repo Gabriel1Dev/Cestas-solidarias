@@ -273,7 +273,10 @@ body .profile-popover .popover-link { color: var(--theme-ink) !important; }
   .report-metrics > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 !important; }
   .report-metrics dd { margin: 0; font-size: 24px; }
 }
-\n.interview-step[hidden], #interview-form .form-actions [hidden] { display: none !important; }\n.interview-progress { color: var(--theme-accent); font-weight: 700; margin-bottom: 16px; }\n
+
+.interview-step[hidden], #interview-form .form-actions [hidden] { display: none !important; }
+.interview-progress { color: var(--theme-accent); font-weight: 700; margin-bottom: 16px; }
+
 
 /* Aviso de CPF já cadastrado */
 body .main-shell dialog.existing-person-dialog[open] {
@@ -326,4 +329,4 @@ body .triage-card .triage-rejection > summary:hover { background: #f0e9fa; }
 body .triage-card .triage-rejection > summary:focus-visible { outline: 2px solid var(--theme-accent); outline-offset: 2px; }
 body .triage-card .triage-rejection > summary svg { flex: none; color: var(--theme-accent); transition: transform .2s ease; }
 body .triage-card .triage-rejection[open] > summary svg { transform: rotate(180deg); }
-body .triage-card .triage-rejection > p { padding: 0 16px 16px; margin: 0; }
+body .triage-card .triage-rejection > .triage-rejection-field { padding: 0 16px 16px; margin: 0; }

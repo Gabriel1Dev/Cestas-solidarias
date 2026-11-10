@@ -117,6 +117,30 @@ class ClientWorkflowTests(TestCase):
         self.assertEqual(benefit.policy['months'],2)
         self.assertEqual(benefit.periods.count(),2)
 
+    def test_triage_validation_preserves_entered_data(self):
+        family = self.intake()
+        self.client.force_login(self.coordinator)
+        prefix = f'triage-{family.pk}-'
+        response = self.client.post(f'/triagem/{family.pk}/aprovar/', {
+            prefix + 'residents_count': '3',
+            prefix + 'months': '1',
+            prefix + 'screening_reason': 'health',
+            prefix + 'screening_notes': 'Observação de teste preservada',
+        })
+        self.assertContains(response, 'comprovante de endereço')
+        self.assertContains(response, 'Observação de teste preservada')
+        family.refresh_from_db()
+        self.assertEqual(family.status, 'pending')
+
+    def test_configuration_change_records_distribution_time(self):
+        self.client.force_login(self.coordinator)
+        response = self.client.post('/configuracoes/', {
+            'institute': 'Instituto de teste', 'document_types': 'CPF,RG',
+            'distribution_time': '10:30', 'backup_interval_hours': 24, 'backup_keep': 30,
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Audit.objects.get(action='Configuração').after['distribution_time'], '10:30:00')
+
     def test_monthly_schedule_is_second_saturday_and_miss_does_not_release_basket(self):
         family=self.intake(address='Rua do Exemplo 901')
         self.approve(family)

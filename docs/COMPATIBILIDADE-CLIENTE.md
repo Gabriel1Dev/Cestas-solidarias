@@ -127,3 +127,10 @@ Cadastro e revisão: informações essenciais da triagem opcionais por decisão 
 Cadastro e triagem: opções predefinidas para informações essenciais e justificativa de não aprovação, com campo Outros. Observações existentes são preservadas. Django check e 13 testes do fluxo passaram em banco isolado.
 Cadastro organizado em quatro etapas no navegador, preservando os campos e envio originais. Navegação inicial conferida no navegador local; Django check e 13 testes passaram em banco isolado. Falta validação do fluxo completo com a pessoa responsável.
 Aviso de CPF existente recebeu ajustes de posicionamento e apresentação para telas pequenas. Django check sem erros. Validação visual do diálogo pendente.
+
+## Revisão de entrega — 10/11/2026
+
+- Cadastro em quatro etapas concluído no navegador com dados fictícios a 390 px. Aviso de CPF existente medido no centro a 320, 390 e 1440 px. Aprovação sem justificativa e PDF verificados no navegador local.
+- Configurações gravam a hora no histórico. Erros de triagem mantêm os valores informados. A mudança de duração na aprovação confere sobreposição de endereço.
+- A conta da coordenação pode alterar a senha no menu da conta. O banco de produção tem uma conta administrativa ativa.
+- 52 testes Django e 7 verificações PostgreSQL passaram em bancos isolados. Na produção, as migrações até 0011 estão aplicadas. Primeira cópia nativa confirmada em repositório GitHub privado, preservando registros legados. A responsável ainda precisa conferir o primeiro acesso e o horário da distribuição.
